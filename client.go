@@ -85,8 +85,8 @@ type closeWriter interface {
 	CloseWrite() error
 }
 
-// SendDone tells Emacs we're done sending commands.
-func SendDone(c net.Conn) error {
+// sendDone tells Emacs we're done sending commands.
+func sendDone(c net.Conn) error {
 	if _, err := io.WriteString(c, "\n"); err != nil {
 		return err
 	}
@@ -107,9 +107,13 @@ const (
 	ErrorResponse    ResponseType = 2
 )
 
-// Receive reads responses from Emacs, puts them into responses
-// and closes the channel.
+// Receive closes the write channel and reads responses from Emacs,
+// puts them into responses and closes the channel.
 func Receive(c net.Conn, responses chan Response) error {
+	if err := sendDone(c); err != nil {
+		return err
+	}
+
 	input := bufio.NewScanner(c)
 	for input.Scan() {
 		line := input.Text()

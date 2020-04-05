@@ -51,9 +51,6 @@ func main() {
            (compile {{str .Command}} {{bool .Comint}}))`); err != nil {
 		log.Fatal(err)
 	}
-	if err := emacsclient.SendDone(c); err != nil {
-		log.Fatal(err)
-	}
 	responses := make(chan emacsclient.Response, 1)
 	go emacsclient.Receive(c, responses)
 	err = emacsclient.ConsumeAll(responses)

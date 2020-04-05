@@ -39,9 +39,6 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	if err := emacsclient.SendDone(c); err != nil {
-		log.Fatal(err)
-	}
 	responses := make(chan emacsclient.Response, 1)
 	go emacsclient.Receive(c, responses)
 	if *unquoteStrings {
