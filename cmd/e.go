@@ -50,9 +50,7 @@ func main() {
 		err = emacsclient.WriteAll(responses, os.Stdout)
 	}
 	if err != nil {
-		os.Stderr.WriteString("*ERROR*: ")
-		os.Stderr.WriteString(err.Error())
-		os.Stderr.WriteString("\n")
+		emacsclient.WriteError(err, os.Stderr)
 		os.Exit(1)
 	}
 }

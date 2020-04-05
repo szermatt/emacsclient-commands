@@ -72,6 +72,15 @@ func SendEval(c net.Conn, elisp string) error {
 	return err
 }
 
+// SendEvalFromTemplate calls SendEval on the result of ExecuteTemplate.
+func SendEvalFromTemplate(c net.Conn, args interface{}, template string) error {
+	expr, err := ExecuteTemplate(args, template)
+	if err != nil {
+		return err
+	}
+	return SendEval(c, expr)
+}
+
 type closeWriter interface {
 	CloseWrite() error
 }

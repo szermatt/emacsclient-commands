@@ -14,7 +14,7 @@ func WriteUnquoted(responses chan Response, out io.StringWriter) error {
 			out.WriteString("\n")
 		}
 		first = false
-		err := ReadElispString(responses, out)
+		err := ReadString(responses, out)
 		if err == nil {
 			continue
 		}
@@ -54,4 +54,25 @@ func WriteAll(responses chan Response, out *os.File) error {
 			return errors.New(response.Text)
 		}
 	}
+}
+
+// ConsumeAll reads all responses, but ignores them.
+func ConsumeAll(responses chan Response) error {
+	for {
+		response, more := <-responses
+		if !more {
+			return nil
+		}
+		if response.Type == ErrorResponse {
+			return errors.New(response.Text)
+		}
+	}
+}
+
+// WriteError writes a error to the given file in a format that is
+// similar to emacsclient.
+func WriteError(err error, out io.StringWriter) {
+	out.WriteString("*ERROR*: ")
+	out.WriteString(err.Error())
+	out.WriteString("\n")
 }
