@@ -47,7 +47,7 @@ func main() {
 			Env:     os.Environ(),
 			Comint:  *comint,
 		},
-		`(let ((compilation-environment '({{range .Env}}{{str .}}{{end}})))
+		`(let ((compilation-environment '({{strList .Env}})))
            (compile {{str .Command}} {{bool .Comint}}))`); err != nil {
 		log.Fatal(err)
 	}

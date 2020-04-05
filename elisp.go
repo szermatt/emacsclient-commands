@@ -128,6 +128,23 @@ func AsString(input string) string {
 	return out.String()
 }
 
+// AsString returns the string representation of an list of strings.
+func AsStringList(input []string) string {
+	var out strings.Builder
+	out.WriteString("'(")
+	first := true
+	for _, s := range input {
+		if first {
+			first = false
+		} else {
+			out.WriteRune(' ')
+		}
+		out.WriteString(AsString(s))
+	}
+	out.WriteRune(')')
+	return out.String()
+}
+
 // AsBool returns the string representation of an  bool.
 func AsBool(val bool) string {
 	if val {
@@ -139,12 +156,14 @@ func AsBool(val bool) string {
 // Builds an elisp expression from a template.
 //
 // The following functions are available in the template:
-//  str  - builds a quoted elisp string
-//  bool - transform a bool to t or nil
+//  str      - builds a quoted elisp string from a string
+//  strList  - builds a quoted elisp string from a []string
+//  bool     - transforms a bool into t or nil
 func ExecuteTemplate(args interface{}, definition string) (string, error) {
 	t := template.New("elisp")
 	funcMap := make(template.FuncMap)
 	funcMap["str"] = AsString
+	funcMap["strList"] = AsStringList
 	funcMap["bool"] = AsBool
 	t.Funcs(funcMap)
 	t, err := t.Parse(definition)
