@@ -119,7 +119,7 @@ func Receive(c net.Conn, responses chan Response) error {
 		case strings.HasPrefix(line, "-error "):
 			responses <- Response{
 				Type: ErrorResponse,
-				Text: unquoteArgument(line[len("-print-nonnl "):]),
+				Text: unquoteArgument(line[len("-error "):]),
 			}
 		}
 	}
