@@ -4,6 +4,7 @@ package emacsclient
 import (
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net"
@@ -11,8 +12,20 @@ import (
 	"strings"
 )
 
-// DefaultSocketName returns the default Emacs server socket for the current user.
-func DefaultSocketName() string {
+// Client dialing options.
+type Options struct {
+	SocketName string
+}
+
+// OptionsFromFlags returns client options controlled by standard command-line flags.
+func OptionsFromFlags() *Options {
+	options := &Options{}
+	flag.StringVar(&options.SocketName, "socket-name", defaultSocketName(), "Emacs server unix socket")
+	return options
+}
+
+// defaultSocketName returns the default Emacs server socket for the current user.
+func defaultSocketName() string {
 	fromEnv := os.Getenv("EMACS_SOCKET_NAME")
 	if fromEnv != "" {
 		return fromEnv
@@ -20,16 +33,26 @@ func DefaultSocketName() string {
 	return fmt.Sprintf("%semacs%d/server", os.TempDir(), os.Getuid())
 }
 
-// SendEval sends a elisp expression to Emacs to evaluate.
-//
-// It returns the result as a string.
-func SendEval(c net.Conn, elisp string) error {
-	_, err := io.WriteString(c, "-eval "+quoteArgument(elisp)+" ")
-	return err
+// Dial connects to the remote Emacs server.
+func Dial(options *Options) (net.Conn, error) {
+	conn, err := net.Dial("unix", options.SocketName)
+	if err != nil {
+		return nil, err
+	}
+	if err = initConnection(conn); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	return conn, nil
 }
 
-// SendPWD sends the current directory to Emacs.
-func SendPWD(c net.Conn) error {
+// initConnection initializes the connection with Emacs.
+func initConnection(c net.Conn) error {
+	return sendPWD(c)
+}
+
+// sendPWD sends the current directory to Emacs.
+func sendPWD(c net.Conn) error {
 	pwd := os.Getenv("PWD")
 	if pwd == "" {
 		cwd, err := os.Getwd()
@@ -39,6 +62,14 @@ func SendPWD(c net.Conn) error {
 		pwd = cwd
 	}
 	_, err := io.WriteString(c, "-dir "+quoteArgument(pwd)+"/ ")
+	return err
+}
+
+// SendEval sends a elisp expression to Emacs to evaluate.
+//
+// It returns the result as a string.
+func SendEval(c net.Conn, elisp string) error {
+	_, err := io.WriteString(c, "-eval "+quoteArgument(elisp)+" ")
 	return err
 }
 

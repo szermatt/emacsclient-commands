@@ -4,14 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"os"
 
 	"github.com/szermatt/emacsclient"
 )
 
 var (
-	socket = flag.String("socket-name", emacsclient.DefaultSocketName(), "Emacs server unix socket")
+	clientOptions = emacsclient.OptionsFromFlags()
 )
 
 func main() {
@@ -28,13 +27,11 @@ func main() {
 		os.Exit(3)
 	}
 
-	c, err := net.Dial("unix", *socket)
+	c, err := emacsclient.Dial(clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer c.Close()
-
-	emacsclient.SendPWD(c)
 
 	for _, arg := range flag.Args() {
 		if err := emacsclient.SendEval(c, arg); err != nil {
