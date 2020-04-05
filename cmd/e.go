@@ -17,10 +17,16 @@ var (
 func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "e evaluates a lisp expression and prints the result.\n")
-		fmt.Fprintf(os.Stderr, "usage: e {args} elisp-expression\n")
+		fmt.Fprintf(os.Stderr, "usage: e {args} expression {expressions...}\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	if len(flag.Args()) == 0 {
+		fmt.Fprintf(os.Stderr, "ERROR: missing expression\n")
+		flag.Usage()
+		os.Exit(3)
+	}
 
 	c, err := net.Dial("unix", *socket)
 	if err != nil {
