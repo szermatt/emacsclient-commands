@@ -85,34 +85,75 @@ func SendDone(c net.Conn) error {
 	return c.(closeWriter).CloseWrite()
 }
 
-func ReceiveAndWrite(c net.Conn, out *os.File) error {
+// Response received from the Emacs server
+type Response struct {
+	Type ResponseType
+	Text string
+}
+
+type ResponseType int32
+
+const (
+	SuccessResponse  ResponseType = 0
+	ContinueResponse ResponseType = 1
+	ErrorResponse    ResponseType = 2
+)
+
+// Receive reads responses from Emacs, puts them into responses
+// and closes the channel.
+func Receive(c net.Conn, responses chan Response) error {
 	input := bufio.NewScanner(c)
-	first := true
 	for input.Scan() {
 		line := input.Text()
 		switch {
 		case strings.HasPrefix(line, "-print "):
-			if !first {
-				out.WriteString("\n")
+			responses <- Response{
+				Type: SuccessResponse,
+				Text: unquoteArgument(line[len("-print "):]),
 			}
-			first = false
-			out.WriteString(unquoteArgument(line[len("-print "):]))
 		case strings.HasPrefix(line, "-print-nonl "):
-			first = false
-			out.WriteString(unquoteArgument(line[len("-print-nonnl "):]))
-		case strings.HasPrefix(line, "-error "):
-			if !first {
-				out.WriteString("\n")
+			responses <- Response{
+				Type: ContinueResponse,
+				Text: unquoteArgument(line[len("-print-nonnl "):]),
 			}
-			return errors.New(unquoteArgument(line[len("-error "):]))
-		default:
-			continue
+		case strings.HasPrefix(line, "-error "):
+			responses <- Response{
+				Type: ErrorResponse,
+				Text: unquoteArgument(line[len("-print-nonnl "):]),
+			}
 		}
 	}
-	if !first {
-		out.WriteString("\n")
+	close(responses)
+	return input.Err()
+}
+
+// ReceiveAndWrite reads responses from Emacs and writes the to the
+// given output. Returns once there's nothing else to read.
+func ReceiveAndWrite(c net.Conn, out *os.File) error {
+	responses := make(chan Response, 1)
+	go Receive(c, responses)
+	first := true
+	for {
+		response, more := <-responses
+		if !more {
+			if !first {
+				out.WriteString("\n")
+			}
+			return nil
+		}
+		switch response.Type {
+		case SuccessResponse:
+			if !first {
+				out.WriteString("\n")
+			}
+			first = false
+			out.WriteString(response.Text)
+		case ContinueResponse:
+			out.WriteString(response.Text)
+		case ErrorResponse:
+			return errors.New(response.Text)
+		}
 	}
-	return nil
 }
 
 // quoteArgument quotes the given string to send to the Emacs server.

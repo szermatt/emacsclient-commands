@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	clientOptions = emacsclient.OptionsFromFlags()
+	clientOptions  = emacsclient.OptionsFromFlags()
+	unquoteStrings = flag.Bool("unquote", true, "Remove quotes from elisp strings.")
 )
 
 func main() {
@@ -41,7 +42,14 @@ func main() {
 	if err := emacsclient.SendDone(c); err != nil {
 		log.Fatal(err)
 	}
-	if err := emacsclient.ReceiveAndWrite(c, os.Stdout); err != nil {
+	if *unquoteStrings {
+		responses := make(chan emacsclient.Response, 1)
+		go emacsclient.Receive(c, responses)
+		err = emacsclient.WriteUnquoted(responses, os.Stdout)
+	} else {
+		err = emacsclient.ReceiveAndWrite(c, os.Stdout)
+	}
+	if err != nil {
 		os.Stderr.WriteString("*ERROR*: ")
 		os.Stderr.WriteString(err.Error())
 		os.Stderr.WriteString("\n")
