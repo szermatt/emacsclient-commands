@@ -42,12 +42,12 @@ func main() {
 	if err := emacsclient.SendDone(c); err != nil {
 		log.Fatal(err)
 	}
+	responses := make(chan emacsclient.Response, 1)
+	go emacsclient.Receive(c, responses)
 	if *unquoteStrings {
-		responses := make(chan emacsclient.Response, 1)
-		go emacsclient.Receive(c, responses)
 		err = emacsclient.WriteUnquoted(responses, os.Stdout)
 	} else {
-		err = emacsclient.ReceiveAndWrite(c, os.Stdout)
+		err = emacsclient.WriteAll(responses, os.Stdout)
 	}
 	if err != nil {
 		os.Stderr.WriteString("*ERROR*: ")

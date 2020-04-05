@@ -3,7 +3,6 @@ package emacsclient
 
 import (
 	"bufio"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -125,35 +124,6 @@ func Receive(c net.Conn, responses chan Response) error {
 	}
 	close(responses)
 	return input.Err()
-}
-
-// ReceiveAndWrite reads responses from Emacs and writes the to the
-// given output. Returns once there's nothing else to read.
-func ReceiveAndWrite(c net.Conn, out *os.File) error {
-	responses := make(chan Response, 1)
-	go Receive(c, responses)
-	first := true
-	for {
-		response, more := <-responses
-		if !more {
-			if !first {
-				out.WriteString("\n")
-			}
-			return nil
-		}
-		switch response.Type {
-		case SuccessResponse:
-			if !first {
-				out.WriteString("\n")
-			}
-			first = false
-			out.WriteString(response.Text)
-		case ContinueResponse:
-			out.WriteString(response.Text)
-		case ErrorResponse:
-			return errors.New(response.Text)
-		}
-	}
 }
 
 // quoteArgument quotes the given string to send to the Emacs server.

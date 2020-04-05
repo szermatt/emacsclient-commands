@@ -1,5 +1,4 @@
-// Utilities for generating and parsing elisp types in
-// text form.
+// Utilities for generating and parsing elisp types in text form.
 package emacsclient
 
 import (
@@ -107,27 +106,5 @@ func ReadElispString(responses chan Response, out io.StringWriter) error {
 			}
 			out.WriteString(string(r))
 		}
-	}
-}
-
-func WriteUnquoted(responses chan Response, out io.StringWriter) error {
-	first := true
-	for {
-		if !first {
-			out.WriteString("\n")
-		}
-		first = false
-		err := ReadElispString(responses, out)
-		if err == nil {
-			continue
-		}
-		if err == io.EOF {
-			return nil
-		}
-		if perr, ok := err.(*ParseError); ok {
-			out.WriteString(perr.Response.Text)
-			continue
-		}
-		return err
 	}
 }
