@@ -11,9 +11,9 @@ clean:
 install: $(addprefix $(DESTDIR)$(BINDIR),$(commands))
 .PHONY: install
 
-$(OUTDIR)/%: cmd/%.go
+$(OUTDIR)/%: $(root)cmd/%.go $(wildcard $(root)*.go)
 	go build $(DEV_GO_FLAGS) -o $@ $<
 
-$(DESTDIR)$(BINDIR)%: cmd/%.go
+$(DESTDIR)$(BINDIR)%: $(root)cmd/%.go $(wildcard $(root)*.go)
 	go build $(OPT_GO_FLAGS) -o $@ $<
 
