@@ -13,6 +13,10 @@ import (
 
 // DefaultSocketName returns the default Emacs server socket for the current user.
 func DefaultSocketName() string {
+	fromEnv := os.Getenv("EMACS_SOCKET_NAME")
+	if fromEnv != "" {
+		return fromEnv
+	}
 	return fmt.Sprintf("%semacs%d/server", os.TempDir(), os.Getuid())
 }
 
