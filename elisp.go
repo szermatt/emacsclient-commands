@@ -9,7 +9,6 @@ import (
 	"text/template"
 )
 
-//
 type ParseError struct {
 	Response    Response
 	Description string
@@ -128,6 +127,40 @@ func AsString(input string) string {
 	return out.String()
 }
 
+// AsChar returns the first character of input as a elisp char.
+func AsChar(input string) string {
+	var out strings.Builder
+	out.WriteRune('?')
+	var r rune
+	for _, c := range input {
+		r = c
+		break
+	}
+	switch r {
+	case '\n':
+		out.WriteString("\\n")
+	case ' ':
+		out.WriteString("\\ ")
+	case '"':
+		out.WriteString("\\\"")
+	case '[':
+		out.WriteString("\\[")
+	case ']':
+		out.WriteString("\\]")
+	case '(':
+		out.WriteString("\\(")
+	case ')':
+		out.WriteString("\\)")
+	default:
+		if r < 32 {
+			out.WriteString(fmt.Sprintf("\\x%2.2x", r))
+		} else {
+			out.WriteRune(r)
+		}
+	}
+	return out.String()
+}
+
 // AsString returns the string representation of an list of strings.
 func AsStringList(input []string) string {
 	var out strings.Builder
@@ -165,6 +198,7 @@ func ExecuteTemplate(args interface{}, definition string) (string, error) {
 	funcMap["str"] = AsString
 	funcMap["strList"] = AsStringList
 	funcMap["bool"] = AsBool
+	funcMap["char"] = AsChar
 	t.Funcs(funcMap)
 	t, err := t.Parse(definition)
 	if err != nil {

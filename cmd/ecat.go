@@ -52,7 +52,7 @@ func main() {
 			Mark:       *mark,
 		},
 		`(let ((buffer))
-           {{if len .BufferName > 0}}
+           {{if .BufferName}}
              (setq buffer (get-buffer {{str .BufferName}}))
            {{else}}
              (setq buffer
