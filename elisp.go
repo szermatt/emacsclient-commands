@@ -122,7 +122,6 @@ func WriteUnquoted(responses chan Response, out io.StringWriter) error {
 			continue
 		}
 		if err == io.EOF {
-			out.WriteString("\n")
 			return nil
 		}
 		if perr, ok := err.(*ParseError); ok {
