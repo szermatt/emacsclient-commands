@@ -34,6 +34,8 @@ func main() {
 	}
 	defer c.Close()
 
+	emacsclient.SendPWD(c)
+
 	for _, arg := range flag.Args() {
 		if err := emacsclient.SendEval(c, arg); err != nil {
 			log.Fatal(err)

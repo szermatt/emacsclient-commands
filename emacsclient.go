@@ -16,7 +16,7 @@ func DefaultSocketName() string {
 	return fmt.Sprintf("%semacs%d/server", os.TempDir(), os.Getuid())
 }
 
-// Eval sends a elisp expression to Emacs to evaluate.
+// SendEval sends a elisp expression to Emacs to evaluate.
 //
 // It returns the result as a string.
 func SendEval(c net.Conn, elisp string) error {
@@ -24,10 +24,25 @@ func SendEval(c net.Conn, elisp string) error {
 	return err
 }
 
+// SendPWD sends the current directory to Emacs.
+func SendPWD(c net.Conn) error {
+	pwd := os.Getenv("PWD")
+	if pwd == "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		pwd = cwd
+	}
+	_, err := io.WriteString(c, "-dir "+quoteArgument(pwd)+"/ ")
+	return err
+}
+
 type closeWriter interface {
 	CloseWrite() error
 }
 
+// SendDone tells Emacs we're done sending commands.
 func SendDone(c net.Conn) error {
 	if _, err := io.WriteString(c, "\n"); err != nil {
 		return err
