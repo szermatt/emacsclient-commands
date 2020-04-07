@@ -9,12 +9,11 @@ import (
 	"github.com/szermatt/emacsclient"
 )
 
-var (
-	clientOptions  = emacsclient.OptionsFromFlags()
-	unquoteStrings = flag.Bool("unquote", true, "Remove quotes from elisp strings.")
-)
-
 func main() {
+	clientOptions := emacsclient.OptionsFromFlags()
+	quoted := true
+	flag.BoolVar(&quoted, "q", false, "Shorthand for --quoted")
+	flag.BoolVar(&quoted, "quoted", false, "Keep quoted strings.")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "e evaluates a lisp expression and prints the result.\n")
 		fmt.Fprintf(os.Stderr, "usage: e {args} expression {expressions...}\n")
@@ -41,10 +40,10 @@ func main() {
 	}
 	responses := make(chan emacsclient.Response, 1)
 	go emacsclient.Receive(c, responses)
-	if *unquoteStrings {
-		err = emacsclient.WriteUnquoted(responses, os.Stdout)
-	} else {
+	if quoted {
 		err = emacsclient.WriteAll(responses, os.Stdout)
+	} else {
+		err = emacsclient.WriteUnquoted(responses, os.Stdout)
 	}
 	if err != nil {
 		emacsclient.WriteError(err, os.Stderr)

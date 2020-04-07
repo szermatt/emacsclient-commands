@@ -9,12 +9,11 @@ import (
 	"github.com/szermatt/emacsclient"
 )
 
-var (
-	mark          = flag.Bool("mark", false, "Restrict output to the content of the mark")
-	clientOptions = emacsclient.OptionsFromFlags()
-)
-
 func main() {
+	clientOptions := emacsclient.OptionsFromFlags()
+	mark := false
+	flag.BoolVar(&mark, "m", false, "Shorthand for --mark")
+	flag.BoolVar(&mark, "mark", false, "Restrict output to the content of the mark")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ecat outputs the content of an emacs buffer.\n")
 		fmt.Fprintf(os.Stderr, "usage: ecompile {args} [buffer-name]\n")
@@ -49,7 +48,7 @@ func main() {
 	if err := emacsclient.SendEvalFromTemplate(
 		c, &templateArgs{
 			BufferName: bufferName,
-			Mark:       *mark,
+			Mark:       mark,
 		},
 		`(let ((buffer))
            {{if .BufferName}}

@@ -9,12 +9,11 @@ import (
 	"github.com/szermatt/emacsclient"
 )
 
-var (
-	clientOptions = emacsclient.OptionsFromFlags()
-	input         = flag.Bool("input", false, "Put data from stdin into register")
-)
-
 func main() {
+	clientOptions := emacsclient.OptionsFromFlags()
+	input := false
+	flag.BoolVar(&input, "i", input, "Shorthand for --input")
+	flag.BoolVar(&input, "input", input, "Put data from stdin into register")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ereg write an Emacs register to stdout.\n")
 		fmt.Fprintf(os.Stderr, "usage: ereg {args} [register]\n")
@@ -49,8 +48,7 @@ func main() {
 	args := &templateArgs{
 		Register: register,
 	}
-	write := *input
-	if write {
+	if input {
 		if args.Fifo, err = emacsclient.StdinToFifo(); err != nil {
 			log.Fatal(err)
 		}
@@ -86,7 +84,7 @@ func main() {
 	}
 	responses := make(chan emacsclient.Response, 1)
 	go emacsclient.Receive(c, responses)
-	if write {
+	if input {
 		err = emacsclient.ConsumeAll(responses)
 	} else {
 		err = emacsclient.WriteUnquoted(responses, os.Stdout)

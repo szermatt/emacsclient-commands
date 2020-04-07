@@ -11,12 +11,11 @@ import (
 	"gopkg.in/alessio/shellescape.v1"
 )
 
-var (
-	clientOptions = emacsclient.OptionsFromFlags()
-	comint        = flag.Bool("comint", false, "Run compile in comint buffer")
-)
-
 func main() {
+	clientOptions := emacsclient.OptionsFromFlags()
+	comint := false
+	flag.BoolVar(&comint, "c", false, "Shorthand for --comint")
+	flag.BoolVar(&comint, "comint", false, "Run compile in comint buffer")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ecompiles calls (compile) on Emacs.\n")
 		fmt.Fprintf(os.Stderr, "usage: ecompile {args} compile-command...\n")
@@ -45,7 +44,7 @@ func main() {
 		c, &templateArgs{
 			Command: buildShellCommand(flag.Args()),
 			Env:     os.Environ(),
-			Comint:  *comint,
+			Comint:  comint,
 		},
 		`(let ((compilation-environment '({{strList .Env}})))
            (compile {{str .Command}} {{bool .Comint}}))`); err != nil {
