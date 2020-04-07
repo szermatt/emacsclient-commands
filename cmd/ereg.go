@@ -11,6 +11,7 @@ import (
 
 var (
 	clientOptions = emacsclient.OptionsFromFlags()
+	input         = flag.Bool("input", false, "Put data from stdin into register")
 )
 
 func main() {
@@ -43,25 +44,53 @@ func main() {
 
 	type templateArgs struct {
 		Register string
+		Fifo     string
 	}
+	args := &templateArgs{
+		Register: register,
+	}
+	write := *input
+	if write {
+		if args.Fifo, err = emacsclient.StdinToFifo(); err != nil {
+			log.Fatal(err)
+		}
+	}
+	defer func() {
+		if len(args.Fifo) != 0 {
+			os.Remove(args.Fifo)
+		}
+	}()
+
 	if err := emacsclient.SendEvalFromTemplate(
-		c, &templateArgs{
-			Register: register,
-		},
+		c, args,
 		`(with-temp-buffer
-           {{if not .Register}}
-             (yank)
-           {{else if eq (len .Register) 1}}
-             (insert-register {{char .Register}})
+           (let ((reg {{if not .Register}}
+                        nil
+                      {{else if eq (len .Register) 1}}
+                        {{char .Register}}
+                      {{else}}
+                        {{str .Register}}
+                      {{end}}))
+           {{if not .Fifo}}
+             (if reg
+                   (insert-register reg)
+               (yank))
+             (buffer-substring-no-properties (point-min) (point-max))
            {{else}}
-             (insert-register {{str .Register}})
-           {{end}}
-           (buffer-substring-no-properties (point-min) (point-max)))`); err != nil {
+             (insert-file-contents {{str .Fifo}})
+             (if reg
+                 (copy-to-register reg (point-min) (point-max))
+               (copy-region-as-kill (point-min) (point-max)))
+           {{end}}))`); err != nil {
 		log.Fatal(err)
 	}
 	responses := make(chan emacsclient.Response, 1)
 	go emacsclient.Receive(c, responses)
-	err = emacsclient.WriteUnquoted(responses, os.Stdout)
+	if write {
+		err = emacsclient.ConsumeAll(responses)
+	} else {
+		err = emacsclient.WriteUnquoted(responses, os.Stdout)
+	}
 	if err != nil {
 		emacsclient.WriteError(err, os.Stderr)
 		os.Exit(1)
