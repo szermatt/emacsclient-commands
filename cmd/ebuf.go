@@ -24,7 +24,6 @@ func main() {
 
 	clientOptions := emacsclient.OptionsFromFlags()
 	defineStringFlag(&args.Mode, "m", "mode", "Mode to switch to once file has been read.")
-	defineStringFlag(&args.Name, "n", "name", "Buffer name.")
 	defineBoolFlag(&args.NoSelect, "s", "noselect", "Don't select the buffer.")
 	defineBoolFlag(&args.Follow, "f", "follow", "Keep showing end ouf output.")
 	defineBoolFlag(&args.Reuse, "u", "reuse", "Reuse existing buffer, if inactive.")
@@ -56,7 +55,6 @@ func main() {
 	if args.Fifo, err = emacsclient.StdinToFifo(); err != nil {
 		log.Fatal(err)
 	}
-	//defer os.Remove(args.Fifo)
 
 	if err := emacsclient.SendEvalFromTemplate(
 		c, args,
