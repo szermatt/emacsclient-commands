@@ -30,7 +30,7 @@ func main() {
 	case 1:
 		register = flag.Args()[0]
 	default:
-		fmt.Fprintf(os.Stderr, "ERROR: too many buffer names\n")
+		fmt.Fprintf(os.Stderr, "ERROR: too many registers\n")
 		flag.Usage()
 		os.Exit(3)
 	}
