@@ -8,7 +8,7 @@ clean:
 	rm -fr $(OUTDIR)
 .PHONY: clean
 
-install: $(addprefix $(DESTDIR)$(BINDIR),$(commands))
+install: $(addprefix $(DESTDIR)$(BINDIR),$(commands) epipe)
 .PHONY: install
 
 $(OUTDIR)/%: $(root)cmd/%.go $(wildcard $(root)*.go)
@@ -16,4 +16,7 @@ $(OUTDIR)/%: $(root)cmd/%.go $(wildcard $(root)*.go)
 
 $(DESTDIR)$(BINDIR)%: $(root)cmd/%.go $(wildcard $(root)*.go)
 	go build $(OPT_GO_FLAGS) -o $@ $<
+
+$(DESTDIR)$(BINDIR)epipe: $(DESTDIR)$(BINDIR)ebuf
+	cp $< $@
 
