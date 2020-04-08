@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -21,12 +23,14 @@ func main() {
 	args := &templateArgs{
 		Name: "ebuf",
 	}
+	letThroughLines := 0
 
 	clientOptions := emacsclient.OptionsFromFlags()
 	defineStringFlag(&args.Mode, "m", "mode", "Mode to switch to once file has been read.")
 	defineBoolFlag(&args.NoSelect, "s", "noselect", "Don't select the buffer.")
 	defineBoolFlag(&args.Follow, "f", "follow", "Keep showing end ouf output.")
 	defineBoolFlag(&args.Reuse, "u", "reuse", "Reuse existing buffer, if inactive.")
+	defineIntFlag(&letThroughLines, "n", "limit", "Send up to limit lines to stdout.")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ebuf displays stdin into an emacs buffer.\n")
 		fmt.Fprintf(os.Stderr, "usage: ebuf {args} [buffer-name]\n")
@@ -46,13 +50,35 @@ func main() {
 		os.Exit(3)
 	}
 
+	input := bufio.NewReader(os.Stdin)
+	buffer := []byte{}
+	if letThroughLines > 0 {
+		remainingLines := letThroughLines
+		for remainingLines >= 0 {
+			line, readErr := input.ReadBytes('\n')
+			if len(line) > 0 {
+				if _, err := os.Stdout.Write(line); err != nil {
+					log.Fatal(err)
+				}
+			}
+			if readErr == io.EOF {
+				return
+			} else if readErr != nil {
+				log.Fatal(readErr)
+			}
+			buffer = append(buffer, line...)
+			remainingLines--
+		}
+		os.Stdout.WriteString("[…] ")
+	}
+
 	c, err := emacsclient.Dial(clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer c.Close()
 
-	if args.Fifo, err = emacsclient.StdinToFifo(); err != nil {
+	if args.Fifo, err = emacsclient.WriteToFifo(buffer, input); err != nil {
 		log.Fatal(err)
 	}
 
@@ -122,4 +148,9 @@ func defineStringFlag(value *string, short string, long string, description stri
 func defineBoolFlag(value *bool, short string, long string, description string) {
 	flag.BoolVar(value, short, *value, "Shorthand for --"+long)
 	flag.BoolVar(value, long, *value, description)
+}
+
+func defineIntFlag(value *int, short string, long string, description string) {
+	flag.IntVar(value, short, *value, "Shorthand for --"+long)
+	flag.IntVar(value, long, *value, description)
 }

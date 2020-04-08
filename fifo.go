@@ -3,7 +3,7 @@
 package emacsclient
 
 import (
-	"io"
+	"bufio"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,6 +16,16 @@ import (
 //
 // Caller is responsible for deleting the file.
 func StdinToFifo() (string, error) {
+	return WriteToFifo([]byte{}, bufio.NewReader(os.Stdin))
+}
+
+// Create a temporary fifo that forwards data from buffer then the
+// given reader in the background.
+//
+// Dies if reading or writing fails.
+//
+// Caller is responsible for deleting the file.
+func WriteToFifo(buffer []byte, reader *bufio.Reader) (string, error) {
 	tmpfile, err := ioutil.TempFile("", "fifo.*")
 	if err != nil {
 		return "", err
@@ -27,7 +37,12 @@ func StdinToFifo() (string, error) {
 		return "", err
 	}
 	go func() {
-		if _, err := io.Copy(out, os.Stdin); err != nil {
+		if len(buffer) > 0 {
+			if _, err := out.Write(buffer); err != nil {
+				log.Fatal(err)
+			}
+		}
+		if _, err := reader.WriteTo(out); err != nil {
 			log.Fatal(err)
 		}
 		if err := out.Close(); err != nil {
