@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/szermatt/emacsclient"
 )
@@ -20,19 +21,24 @@ func main() {
 		Name     string
 		Fifo     string
 	}
-	args := &templateArgs{
-		Name: "ebuf",
-	}
+	commandName := "ebuf"
 	letThroughLines := 0
+	if strings.Contains(os.Args[0], "pipe") {
+		commandName = "epipe"
+		letThroughLines = 15
+	}
+	args := &templateArgs{
+		Name: commandName,
+	}
 
 	clientOptions := emacsclient.OptionsFromFlags()
 	defineStringFlag(&args.Mode, "m", "mode", "Mode to switch to once file has been read.")
 	defineBoolFlag(&args.NoSelect, "s", "noselect", "Don't select the buffer.")
 	defineBoolFlag(&args.Follow, "f", "follow", "Keep showing end ouf output.")
 	defineBoolFlag(&args.Reuse, "u", "reuse", "Reuse existing buffer, if inactive.")
-	defineIntFlag(&letThroughLines, "n", "limit", "Send up to limit lines to stdout.")
+	defineIntFlag(&letThroughLines, "n", "limit", "Send up to limit lines to stdout before creating a buffer.")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "ebuf displays stdin into an emacs buffer.\n")
+		fmt.Fprintf(os.Stderr, commandName+" displays stdin into an emacs buffer.\n")
 		fmt.Fprintf(os.Stderr, "usage: ebuf {args} [buffer-name]\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "  buffer-name\n")
