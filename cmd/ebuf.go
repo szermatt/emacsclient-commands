@@ -34,7 +34,7 @@ func main() {
 	clientOptions := emacsclient.OptionsFromFlags()
 	defineStringFlag(&args.Mode, "m", "mode", "Mode to switch to once file has been read.")
 	defineBoolFlag(&args.NoSelect, "s", "noselect", "Don't select the buffer.")
-	defineBoolFlag(&args.Follow, "f", "follow", "Keep showing end ouf output.")
+	defineBoolFlag(&args.Follow, "f", "follow", "Keep showing end of output.")
 	defineBoolFlag(&args.Reuse, "u", "reuse", "Reuse existing buffer, if inactive.")
 	defineIntFlag(&letThroughLines, "n", "limit", "Send up to limit lines to stdout before creating a buffer.")
 	flag.Usage = func() {
