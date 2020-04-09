@@ -51,7 +51,10 @@ func main() {
 		args.Command = flag.Args()[0]
 		args.CommandArgs = flag.Args()[1:]
 	} else {
-		args.Command = "bash"
+		args.Command = os.Getenv("SHELL")
+		if args.Command == "" {
+			args.Command = "/bin/sh"
+		}
 		args.CommandArgs = append([]string{"-i", "-c", buildShellCommand(flag.Args())})
 	}
 
