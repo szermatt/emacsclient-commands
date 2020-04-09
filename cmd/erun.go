@@ -126,7 +126,14 @@ func defineBoolFlag(value *bool, short string, long string, description string) 
 func buildShellCommand(unquoted []string) string {
 	var quoted []string
 	for _, e := range unquoted {
-		quoted = append(quoted, shellescape.Quote(e))
+		if e == "|" || e == "|&" || e == "||" || e == "&&" || e == "&" || e == ";" {
+			// Let the above command separators through unquoted, so
+			// that multiple commands can be chained together.
+			// Example: erun cat ~/.bashrc \| grep bash
+			quoted = append(quoted, e)
+		} else {
+			quoted = append(quoted, shellescape.Quote(e))
+		}
 	}
 	return strings.Join(quoted, " ")
 }
