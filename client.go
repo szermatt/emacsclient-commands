@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -29,7 +30,7 @@ func defaultSocketName() string {
 	if fromEnv != "" {
 		return fromEnv
 	}
-	return fmt.Sprintf("%semacs%d/server", os.TempDir(), os.Getuid())
+	return path.Join(os.TempDir(), fmt.Sprintf("emacs%d", os.Getuid()), "server")
 }
 
 // Dial connects to the remote Emacs server.
