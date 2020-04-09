@@ -17,7 +17,7 @@ func main() {
 	flag.BoolVar(&comint, "c", false, "Shorthand for --comint")
 	flag.BoolVar(&comint, "comint", false, "Run compile in comint buffer")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "ecompiles calls (compile) on Emacs.\n")
+		fmt.Fprintf(os.Stderr, "ecompile calls (compile) on Emacs.\n")
 		fmt.Fprintf(os.Stderr, "usage: ecompile {args} compile-command...\n")
 		flag.PrintDefaults()
 	}

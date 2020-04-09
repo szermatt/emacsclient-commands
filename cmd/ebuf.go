@@ -38,8 +38,8 @@ func main() {
 	defineBoolFlag(&args.Reuse, "u", "reuse", "Reuse existing buffer, if inactive.")
 	defineIntFlag(&letThroughLines, "n", "limit", "Send up to limit lines to stdout before creating a buffer.")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, commandName+" displays stdin into an emacs buffer.\n")
-		fmt.Fprintf(os.Stderr, "usage: ebuf {args} [buffer-name]\n")
+		fmt.Fprintf(os.Stderr, "%s displays stdin into an emacs buffer.\n", commandName)
+		fmt.Fprintf(os.Stderr, "usage: %s {args} [buffer-name]\n", commandName)
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "  buffer-name\n")
 		fmt.Fprintf(os.Stderr, "    \tName of the new buffer (defaults ebuf)\n")

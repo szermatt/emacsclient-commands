@@ -16,7 +16,7 @@ func main() {
 	flag.BoolVar(&mark, "mark", false, "Restrict output to the content of the mark")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ecat outputs the content of an emacs buffer.\n")
-		fmt.Fprintf(os.Stderr, "usage: ecompile {args} [buffer-name]\n")
+		fmt.Fprintf(os.Stderr, "usage: ecat {args} [buffer-name]\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "  buffer-name\n")
 		fmt.Fprintf(os.Stderr, "    \tName of the buffer (default to last active non-shell buffer)\n")
