@@ -23,7 +23,8 @@ func main() {
 	}
 	noshell := false
 	args := &templateArgs{
-		Name: "ebuf",
+		Name: "erun",
+		Env:  os.Environ(),
 	}
 
 	clientOptions := emacsclient.OptionsFromFlags()
@@ -71,7 +72,6 @@ func main() {
   (require 'cl)
   (lexical-let* ((bufname {{str .Name}})
                  (buffer ({{if .Reuse}}get-buffer-create{{else}}generate-new-buffer{{end}} bufname))
-                 (process-environment {{strList .Env}})
                  (erun-func))
     (setq erun-func (lambda ()
       (interactive)
@@ -80,14 +80,15 @@ func main() {
               (error "a process is still active for '%s'" bufname)))
       (with-current-buffer buffer
         (delete-region (point-min) (point-max))
-        {{if .Ansi}}
-          (term-mode)
-          (term-exec buffer (buffer-name) {{str .Command}} nil {{strList .CommandArgs}})
-          (term-char-mode)
-        {{else}}
-          (comint-mode)
-          (comint-exec buffer (buffer-name) {{str .Command}} nil {{strList .CommandArgs}})
-        {{end}})
+        (let ((process-environment {{strList .Env}}))
+          {{if .Ansi}}
+            (term-mode)
+            (term-exec buffer (buffer-name) {{str .Command}} nil {{strList .CommandArgs}})
+            (term-char-mode)
+          {{else}}
+            (comint-mode)
+            (comint-exec buffer (buffer-name) {{str .Command}} nil {{strList .CommandArgs}})
+          {{end}}))
         (set-process-sentinel
           (get-buffer-process buffer)
           (lambda (process event)
