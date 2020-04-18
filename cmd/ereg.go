@@ -49,15 +49,16 @@ func main() {
 		Register: register,
 	}
 	if input {
-		if args.Fifo, err = emacsclient.StdinToFifo(); err != nil {
+		fifo, err := emacsclient.CreateFifo()
+		if err != nil {
 			log.Fatal(err)
 		}
+		args.Fifo = fifo.Path
+		go func() {
+			fifo.WriteStdin()
+			fifo.Close()
+		}()
 	}
-	defer func() {
-		if len(args.Fifo) != 0 {
-			os.Remove(args.Fifo)
-		}
-	}()
 
 	if err := emacsclient.SendEvalFromTemplate(
 		c, args,

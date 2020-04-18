@@ -84,9 +84,12 @@ func main() {
 	}
 	defer c.Close()
 
-	if args.Fifo, err = emacsclient.WriteToFifo(buffer, input); err != nil {
+	fifo, err := emacsclient.CreateFifo()
+	if err != nil {
 		log.Fatal(err)
 	}
+	defer fifo.Close()
+	args.Fifo = fifo.Path
 
 	if err := emacsclient.SendEvalFromTemplate(
 		c, args,
@@ -143,6 +146,11 @@ func main() {
 	if err != nil {
 		emacsclient.WriteError(err, os.Stderr)
 		os.Exit(1)
+	}
+
+	err = fifo.ChainWrites(buffer, input)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 

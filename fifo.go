@@ -5,49 +5,64 @@ package emacsclient
 import (
 	"bufio"
 	"io/ioutil"
-	"log"
 	"os"
+	"syscall"
 )
 
-// Create a temporary fifo that forwards data from stdin in the
-// background.
-//
-// Dies if reading from stdin fails.
-//
-// Caller is responsible for deleting the file.
-func StdinToFifo() (string, error) {
-	return WriteToFifo([]byte{}, bufio.NewReader(os.Stdin))
+type Fifo struct {
+	Path string
+	file *os.File
 }
 
-// Create a temporary fifo that forwards data from buffer then the
-// given reader in the background.
-//
-// Dies if reading or writing fails.
-//
-// Caller is responsible for deleting the file.
-func WriteToFifo(buffer []byte, reader *bufio.Reader) (string, error) {
+// Creates a named pipe and open it for writing.
+func CreateFifo() (*Fifo, error) {
 	tmpfile, err := ioutil.TempFile("", "fifo.*")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	path := tmpfile.Name()
 	tmpfile.Close()
-	out, err := os.OpenFile(path, os.O_WRONLY, os.ModeNamedPipe)
-	if err != nil {
-		return "", err
+	os.Remove(path)
+	if err := syscall.Mkfifo(path, 0600); err != nil {
+		return nil, err
 	}
-	go func() {
-		if len(buffer) > 0 {
-			if _, err := out.Write(buffer); err != nil {
-				log.Fatal(err)
-			}
+	return &Fifo{Path: path, file: nil}, nil
+}
+
+// openForWrite, open the fifo, if necessary.
+func (o *Fifo) openForWrite() error {
+	if o.file != nil {
+		return nil
+	}
+	var err error
+	o.file, err = os.OpenFile(o.Path, os.O_WRONLY, 0)
+	return err
+}
+
+// WriteStdin writes stdin to the FIFO.
+func (o *Fifo) WriteStdin() error {
+	return o.ChainWrites([]byte{}, bufio.NewReader(os.Stdin))
+}
+
+// ChainWrites writes prelude, then the content of readed to the FIFO.
+func (o *Fifo) ChainWrites(prelude []byte, reader *bufio.Reader) error {
+	if err := o.openForWrite(); err != nil {
+		return err
+	}
+	if len(prelude) > 0 {
+		_, err := o.file.Write(prelude)
+		if err != nil {
+			return err
 		}
-		if _, err := reader.WriteTo(out); err != nil {
-			log.Fatal(err)
-		}
-		if err := out.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return path, nil
+	}
+	_, err := reader.WriteTo(o.file)
+	return err
+}
+
+// Close closes the FIFO and deletes the file.
+func (o *Fifo) Close() {
+	if o.file != nil {
+		o.file.Close()
+	}
+	os.Remove(o.Path)
 }
