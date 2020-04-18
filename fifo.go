@@ -9,12 +9,14 @@ import (
 	"syscall"
 )
 
+// Convenience wrapper around a named pipes, stored in a temporary
+// file. The temporary file is deleted when Fifo.Close is called.
 type Fifo struct {
 	Path string
 	file *os.File
 }
 
-// Creates a named pipe and open it for writing.
+// Creates a named pipe.
 func CreateFifo() (*Fifo, error) {
 	tmpfile, err := ioutil.TempFile("", "fifo.*")
 	if err != nil {
