@@ -41,7 +41,8 @@ func ReadBool(responses chan Response) (bool, error) {
 
 // ReadString reads a single string from the given channel.
 //
-// A string can be large and spread over multiple responses.
+// A string can be large and spread over multiple responses. Only some
+// escaped characters actually output by Emacs are supported.
 //
 // Returns a ParseError if what is read isn't a string.
 func ReadString(responses chan Response, out io.StringWriter) error {
