@@ -91,7 +91,10 @@ func sendDone(c net.Conn) error {
 	if _, err := io.WriteString(c, "\n"); err != nil {
 		return err
 	}
-	return c.(closeWriter).CloseWrite()
+	if closeable, ok := c.(closeWriter); ok {
+		return closeable.CloseWrite()
+	}
+	return nil
 }
 
 // Response received from the Emacs server
@@ -127,7 +130,7 @@ func Receive(c net.Conn, responses chan Response) error {
 		case strings.HasPrefix(line, "-print-nonl "):
 			responses <- Response{
 				Type: ContinueResponse,
-				Text: unquoteArgument(line[len("-print-nonnl "):]),
+				Text: unquoteArgument(line[len("-print-nonl "):]),
 			}
 		case strings.HasPrefix(line, "-error "):
 			responses <- Response{
