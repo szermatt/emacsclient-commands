@@ -4,7 +4,6 @@ package emacsclient
 import (
 	"errors"
 	"io"
-	"os"
 )
 
 func WriteUnquoted(responses chan Response, out io.StringWriter) error {
@@ -31,7 +30,7 @@ func WriteUnquoted(responses chan Response, out io.StringWriter) error {
 
 // WriteAll writes the text of all responses to the given output,
 // until there's nothing left to read.
-func WriteAll(responses chan Response, out *os.File) error {
+func WriteAll(responses chan Response, out io.StringWriter) error {
 	first := true
 	for {
 		response, more := <-responses
@@ -51,6 +50,9 @@ func WriteAll(responses chan Response, out *os.File) error {
 		case ContinueResponse:
 			out.WriteString(response.Text)
 		case ErrorResponse:
+			if !first {
+				out.WriteString("\n")
+			}
 			return errors.New(response.Text)
 		}
 	}
