@@ -91,9 +91,6 @@ func sendDone(c net.Conn) error {
 	if _, err := io.WriteString(c, "\n"); err != nil {
 		return err
 	}
-	if closeable, ok := c.(closeWriter); ok {
-		return closeable.CloseWrite()
-	}
 	return nil
 }
 
