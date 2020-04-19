@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"io/ioutil"
 	"os"
+	"path"
 	"syscall"
 )
 
@@ -17,8 +18,8 @@ type Fifo struct {
 }
 
 // Creates a named pipe.
-func CreateFifo() (*Fifo, error) {
-	tmpfile, err := ioutil.TempFile("", "fifo.*")
+func CreateFifo(options *Options) (*Fifo, error) {
+	tmpfile, err := ioutil.TempFile(tempDir(options), "fifo.*")
 	if err != nil {
 		return nil, err
 	}
@@ -67,4 +68,30 @@ func (o *Fifo) Close() {
 		o.file.Close()
 	}
 	os.Remove(o.Path)
+}
+
+// Returns a temporary directory suitable for storing the temporary
+// fifo file.
+//
+// Emacs puts the socket in a user-owned directory. Put the temporary
+// fifo file there when possible.
+//
+// Returns "" to use the system's temporary directory.
+func tempDir(options *Options) string {
+	dir := path.Dir(options.SocketName)
+	if dir == "." {
+		return ""
+	}
+	stat, err := os.Stat(dir)
+	if err == nil && stat.IsDir() && isOwned(stat) && stat.Mode()&0600 == 0600 {
+		return dir
+	}
+	return ""
+}
+
+// isOwned strictly compares file owner with the current user's UID on
+// Posix systems.
+func isOwned(stat os.FileInfo) bool {
+	systat := stat.Sys().(*syscall.Stat_t)
+	return systat != nil && systat.Uid == uint32(os.Getuid())
 }

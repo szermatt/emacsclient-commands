@@ -49,7 +49,7 @@ func main() {
 		Register: register,
 	}
 	if input {
-		fifo, err := emacsclient.CreateFifo()
+		fifo, err := emacsclient.CreateFifo(clientOptions)
 		if err != nil {
 			log.Fatal(err)
 		}

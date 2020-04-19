@@ -84,7 +84,7 @@ func main() {
 	}
 	defer c.Close()
 
-	fifo, err := emacsclient.CreateFifo()
+	fifo, err := emacsclient.CreateFifo(clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
