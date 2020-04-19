@@ -11,6 +11,10 @@ clean:
 install: $(addprefix $(DESTDIR)$(BINDIR),$(commands) epipe)
 .PHONY: install
 
+test: all
+	go test
+.PHONY: test
+
 $(OUTDIR)/%: $(root)cmd/%.go $(wildcard $(root)*.go)
 	go build $(DEV_GO_FLAGS) -o $@ $<
 
