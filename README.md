@@ -9,5 +9,6 @@ Emacs server.
 * ecompile - execute a command using Emacs compile
 * ereg - manipulate the kill ring and registers
 * erun - run a command in an Emacs comint buffer
+* emerge - merge files using ediff on Emacs
 
 License GPL2
