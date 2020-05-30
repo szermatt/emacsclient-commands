@@ -7,7 +7,7 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
 # Configurable variables
-DESTDIR ?= ~/
+DESTDIR ?= /usr/local/
 BINDIR ?= bin/
 OUTDIR ?= $(root)out
 
