@@ -12,8 +12,10 @@ import (
 func main() {
 	clientOptions := emacsclient.OptionsFromFlags()
 	quoted := true
+	file := ""
 	flag.BoolVar(&quoted, "q", false, "Shorthand for --quoted")
 	flag.BoolVar(&quoted, "quoted", false, "Keep quoted strings.")
+	flag.StringVar(&file, "file", "", "File to open afterwards")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "e evaluates a lisp expression and prints the result.\n")
 		fmt.Fprintf(os.Stderr, "usage: e {args} expression {expressions...}\n")
@@ -37,6 +39,9 @@ func main() {
 		if err := emacsclient.SendEval(c, arg); err != nil {
 			log.Fatal(err)
 		}
+	}
+	if len(file) > 0 {
+		emacsclient.SendFile(c, file)
 	}
 	responses := make(chan emacsclient.Response, 1)
 	go emacsclient.Receive(c, responses)

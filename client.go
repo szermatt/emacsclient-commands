@@ -73,6 +73,14 @@ func SendEval(c net.Conn, elisp string) error {
 	return err
 }
 
+// SendEval sends a elisp expression to Emacs to evaluate.
+//
+// It returns the result as a string.
+func SendFile(c net.Conn, path string) error {
+	_, err := io.WriteString(c, "-file "+quoteArgument(path)+" ")
+	return err
+}
+
 // SendEvalFromTemplate calls SendEval on the result of ExecuteTemplate.
 func SendEvalFromTemplate(c net.Conn, args interface{}, template string) error {
 	expr, err := ExecuteTemplate(args, template)
