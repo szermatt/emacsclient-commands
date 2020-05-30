@@ -79,57 +79,87 @@ emacs.args = -local $local -remote $other -base $base -merged $output
 	signal.Notify(sigs, syscall.SIGUSR1, syscall.SIGUSR2)
 
 	err = emacsclient.SendEvalFromTemplate(
-		c, args, `(progn
-(require 'ediff)
-(require 'cl)
-(let ((base {{str .Base}})
-      (local {{str .Local}})
-      (remote {{str .Remote}})
-      (merged {{str .Merged}})
-      (setup-func (list (lambda ()
-        (lexical-let ((ec-resolved nil))
-          (let ((quit-success
-                 (lambda ()
-                   "Quit ediff, reporting the merge as having succeeded."
-                   (interactive)
-                   (ediff-barf-if-not-control-buffer)
-                   (setq ec-resolved
-                         (let ((c 0))
-                           (dotimes (n ediff-number-of-differences)
-                             (when (and (not (ediff-merge-region-is-non-clash n))
-                                        (not (ediff-merge-changed-from-default-p n 'prefers-too)))
-                               (setq c (1+ c))))
-                           (zerop c)))
-                   (call-interactively 'ediff-quit)))
-                (quit-fail
-                  (lambda ()
-                    "Quit ediff, reporting the merge as having failed."
-                    (interactive)
-                    (call-interactively 'ediff-quit)))
-                (quit-signal
-                  (lambda ()
-                    "Let caller know ediff is done"
-                    (signal-process {{.Pid}} (if ec-resolved 'SIGUSR1 'SIGUSR2)))))
-          (local-set-key [remap ediff-quit] quit-success)
-          (local-set-key (kbd "C-c C-c") quit-success)
-          (local-set-key (kbd "C-c C-k") quit-fail)
-          (add-hook 'ediff-quit-hook quit-signal 0 'local)))))))
+		c, args, `(catch 'ec-return
+
+  (let ((buf (find-buffer-visiting {{str .Merged}})))
+    (when (buffer-live-p buf) (kill-buffer buf))
+    (when (buffer-live-p buf) (throw 'ec-return "aborted")))
+
+  (require 'ediff)
+  (require 'cl)
+  (lexical-let ((ec-resolved nil)
+                (saved-window-config (current-window-configuration))
+                (saved-ediff-quit-merge-hook ediff-quit-merge-hook))
+    (let ((base {{str .Base}})
+          (local {{str .Local}})
+          (remote {{str .Remote}})
+          (merged {{str .Merged}})
+          (setup-func (list (lambda ()
+             (let ((quit-success
+                    (lambda ()
+                      "Quit ediff, reporting the merge as having succeeded."
+                      (interactive)
+                      (ediff-barf-if-not-control-buffer)
+                      (setq ec-resolved
+                            (let ((c 0))
+                              (dotimes (n ediff-number-of-differences)
+                                (when (and (not (ediff-merge-region-is-non-clash n))
+                                           (not (ediff-merge-changed-from-default-p n 'prefers-too)))
+                                  (setq c (1+ c))))
+                              (zerop c)))
+                      (ediff-really-quit nil)))
+                   (quit-fail
+                     (lambda ()
+                       "Quit ediff, reporting the merge as having failed."
+                       (interactive)
+                       (ediff-barf-if-not-control-buffer)
+                       (ediff-really-quit nil)))
+                   (quit-signal
+                     (lambda ()
+                       "Let caller know ediff is done"
+                       (when (buffer-live-p ediff-buffer-C)
+                         (with-current-buffer ediff-buffer-C
+                           (set-visited-file-name {{str .Merged}})
+                           (save-buffer)))
+                       (signal-process {{.Pid}} (if ec-resolved 'SIGUSR1 'SIGUSR2))))
+                   (cleanup
+                     (lambda()
+                       "Cleanup session."
+                       (ediff-janitor nil t)
+                       (dolist (buf (list ediff-buffer-A ediff-buffer-B
+                                          ediff-ancestor-buffer ediff-control-buffer))
+                         (when buf (kill-buffer buf)))
+                       (setq-default ediff-quit-merge-hook saved-ediff-quit-merge-hook)
+                       (set-window-configuration saved-window-config))))
+
+              (setq-local ediff-autostore-merge t)
+              (setq-local ediff-merge-store-file {{str .Merged}})
+              (local-set-key [remap ediff-quit] quit-success)
+              (local-set-key (kbd "C-c C-c") quit-success)
+              (local-set-key (kbd "C-c C-k") quit-fail)
+              (add-hook 'ediff-cleanup-hook cleanup -10 'local)
+              (remove-hook 'ediff-quit-merge-hook 'ediff-maybe-save-and-delete-merge)
+              (add-hook 'ediff-quit-merge-hook quit-signal 100 'local))))))
 
   (if (or (equal "" base) (not (file-exists-p base)))
       (ediff-merge local remote setup-func merged)
-    (ediff-merge-with-ancestor local remote base setup-func merged))))`)
+    (ediff-merge-with-ancestor local remote base setup-func merged))
+  "success")))`)
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	emacsclient.SendEval(c, "t")
 	responses := make(chan emacsclient.Response, 1)
 	go emacsclient.Receive(c, responses)
-	err = emacsclient.ConsumeAll(responses)
+	result, err := emacsclient.ReadToString(responses)
 	if err != nil {
 		emacsclient.WriteError(err, os.Stderr)
 		os.Exit(1)
 	}
-
+	if result != "success" {
+		fmt.Fprintf(os.Stderr, "ediff: %s\n", result)
+		os.Exit(1)
+	}
 	sig := <-sigs
 	if sig != syscall.SIGUSR1 {
 		fmt.Fprintf(os.Stderr, "ediff: conflicts remain in %s\n", path.Base(args.Merged))
