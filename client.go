@@ -3,6 +3,7 @@ package emacsclient
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -11,6 +12,9 @@ import (
 	"path"
 	"strings"
 )
+
+// #include <unistd.h>
+import "C"
 
 // Client dialing options.
 type Options struct {
@@ -62,6 +66,24 @@ func sendPWD(c net.Conn) error {
 		pwd = cwd
 	}
 	_, err := io.WriteString(c, "-dir "+quoteArgument(pwd)+"/ ")
+	return err
+}
+
+// SendTTY sends the current terminal information to Emacs.
+func SendTTY(c net.Conn) error {
+	ttyType := os.Getenv("TERM")
+	cTtyName := C.ttyname(1)
+	if cTtyName == nil {
+		return errors.New("No TTY")
+	}
+	ttyName := C.GoString(cTtyName)
+	_, err := io.WriteString(c, "-tty "+quoteArgument(ttyName)+" "+quoteArgument(ttyType)+" ")
+	return err
+}
+
+// SendCreateFrame tells Emacs to create a new frame.
+func SendCreateFrame(c net.Conn) error {
+	_, err := io.WriteString(c, "-window-system ")
 	return err
 }
 

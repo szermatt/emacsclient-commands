@@ -173,6 +173,10 @@ If the session ends with all conflicts resolved, the merge is reported
 as successful to the caller. If there are conflicts left, the session
 is reported as failed.
 
+Normally, `emerge` reuses Emacs current frame, to change that specify
+either `-tty` to run ediff in the current terminal or `-frame` to open
+a new frame.
+
 The tool also installs the following command bindings to the Ediff
 control panel:
 

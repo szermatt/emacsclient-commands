@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"path"
@@ -30,6 +31,11 @@ func main() {
 	flag.StringVar(&args.Remote, "remote", "", "Temporary file containing the contents of the file to be merged")
 	flag.StringVar(&args.Merged, "merged", "", "Name of the file to which the merge tool should write the result of the merge resolution")
 	flag.StringVar(&args.Base, "base", "", "Temporary file containing the common base for the merge. Optional.")
+	tty := false
+	flag.BoolVar(&tty, "tty", false, "If true, run ediff in the current terminal.")
+	frame := false
+	flag.BoolVar(&frame, "frame", false, "If true, run ediff in a new frame.")
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "emerge merge files using ediff on Emacs.\n")
 		fmt.Fprintf(os.Stderr, "usage: ediff {args}\n\n")
@@ -77,6 +83,21 @@ emacs.args = -local $local -remote $other -base $base -merged $output
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGUSR1, syscall.SIGUSR2)
+
+	usingTTY := false
+	if frame {
+		err = emacsclient.SendCreateFrame(c)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if tty && os.Getenv("INSIDE_EMACS") == "" {
+		// Refuse to take over the TTY when run from inside emacs.
+		err = emacsclient.SendTTY(c)
+		if err != nil {
+			log.Fatal(err)
+		}
+		usingTTY = true
+	}
 
 	err = emacsclient.SendEvalFromTemplate(
 		c, args, `(catch 'ec-return
@@ -146,6 +167,7 @@ emacs.args = -local $local -remote $other -base $base -merged $output
               (remove-hook 'ediff-quit-merge-hook 'ediff-maybe-save-and-delete-merge)
               (add-hook 'ediff-quit-merge-hook quit-signal 100 'local))))))
 
+  (select-frame-set-input-focus (selected-frame))
   (if (or (equal "" base) (not (file-exists-p base)))
       (ediff-merge local remote setup-func merged)
     (ediff-merge-with-ancestor local remote base setup-func merged))
@@ -153,7 +175,6 @@ emacs.args = -local $local -remote $other -base $base -merged $output
 	if err != nil {
 		log.Fatal(err)
 	}
-	emacsclient.SendEval(c, "t")
 	responses := make(chan emacsclient.Response, 1)
 	go emacsclient.Receive(c, responses)
 	result, err := emacsclient.ReadToString(responses)
@@ -162,13 +183,43 @@ emacs.args = -local $local -remote $other -base $base -merged $output
 		os.Exit(1)
 	}
 	if result != "success" {
+		if usingTTY {
+			resetTTY(c, clientOptions)
+		}
 		fmt.Fprintf(os.Stderr, "ediff: %s\n", result)
 		os.Exit(1)
 	}
 	sig := <-sigs
 	if sig != syscall.SIGUSR1 {
+		if usingTTY {
+			resetTTY(c, clientOptions)
+		}
 		fmt.Fprintf(os.Stderr, "ediff: conflicts remain in %s\n", path.Base(args.Merged))
 		os.Exit(1)
 	}
+	if usingTTY {
+		resetTTY(c, clientOptions)
+	}
 	os.Exit(0)
+}
+
+// resetTTY attempts to make sure Emacs has stopped using the TTY.
+//
+// When we close the connection, Emacs clears the TTY it was using.
+// However, since this happens on the Emacs process, there's no
+// obvious way of making sure Emacs is done - except having Emacs
+// answer to another connection since everything happens on the same
+// thread.
+func resetTTY(currentConn net.Conn, clientOptions *emacsclient.Options) {
+	currentConn.Close()
+
+	dummyConn, err := emacsclient.Dial(clientOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer dummyConn.Close()
+	err = emacsclient.SendEval(dummyConn, "t")
+	responses := make(chan emacsclient.Response, 1)
+	go emacsclient.Receive(dummyConn, responses)
+	emacsclient.ReadBool(responses)
 }
