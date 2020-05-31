@@ -13,7 +13,7 @@ shell from within an Emacs instance.
 * [ecompile](#ecompile) - execute a command using Emacs compile
 * [ereg](#ereg) - manipulate the kill ring and registers
 * [erun](#erun) - run a command in an Emacs comint buffer
-* [emerge](#emerge) - merge files using ediff on Emacs
+* [emerge](#emerge) - merge files using Ediff on Emacs
 
 These tools connect to Emacs through a UNIX socket created by the
 [Emacs server]
@@ -41,10 +41,10 @@ DESTDIR=~/ make install
 
 ### e
 
-e evaluates a lisp expression and prints the result.
+`e` evaluates a lisp expression and prints the result.
 
-The main difference between e and [`emacsclient -eval`] is that e cleans
-up the result, so you'll get:
+The main difference between `e` and [`emacsclient -eval`] is that `e`
+cleans up the result, so you'll get:
 
 ```
 $ e '(concat "hello " "world")'
@@ -89,7 +89,7 @@ Major Mode] of the Emacs manual.
 
 [Auto Major Mode]: https://www.gnu.org/software/emacs/manual/html_node/elisp/Auto-Major-Mode.html
 
-For example, with:
+For example, with the following snippet in  `~/.emacs.d/init.el`:
 
 ```elisp
 (push '("^diff" . diff-mode) magic-mode-alist)
