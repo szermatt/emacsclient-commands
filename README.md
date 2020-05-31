@@ -7,6 +7,14 @@ These utilities make it easy for shell commands and scripts to
 integrate with Emacs. This is especially useful when running from a
 shell from within an Emacs instance.
 
+* [e](#e) - execute an elisp expression and print the result
+* [ebuf](#ebuf) - send stdin into an Emacs buffer
+* [ecat](#ecat) - send the content of an Emacs buffer to stdout
+* [ecompile](#ecompile) - execute a command using Emacs compile
+* [ereg](#ereg) - manipulate the kill ring and registers
+* [erun](#erun) - run a command in an Emacs comint buffer
+* [emerge](#emerge) - merge files using ediff on Emacs
+
 These tools connect to Emacs through a UNIX socket created by the
 [Emacs server]
 
@@ -164,9 +172,9 @@ ecompile make
 
 ### emerge
 
-`emerge` helps resolve conflicts using ediff. 
+`emerge` helps resolve conflicts using [Ediff](https://www.gnu.org/software/emacs/manual/html_node/ediff/index.html#Top).
 
-The command starts an ediff merge session and waits for the user to end
+The command starts an Ediff merge session and waits for the user to end
 the session, usually by pressing q in the buffer "Ediff Control Panel". 
 
 If the session ends with all conflicts resolved, the merge is reported
@@ -174,17 +182,17 @@ as successful to the caller. If there are conflicts left, the session
 is reported as failed.
 
 Normally, `emerge` reuses Emacs current frame, to change that specify
-either `-tty` to run ediff in the current terminal or `-frame` to open
+either `-tty` to run Ediff in the current terminal or `-frame` to open
 a new frame.
 
 The tool also installs the following command bindings to the Ediff
 control panel:
 
 C-c C-k
-: ends the ediff session unsuccessfully
+: ends the Ediff session unsuccessfully
 
 C-c C-c
-: ends the ediff session successfully
+: ends the Ediff session successfully
 
 To use it with git, add the following to `~/.gitconfig`:
 
