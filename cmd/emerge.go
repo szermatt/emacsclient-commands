@@ -80,16 +80,19 @@ emacs.args = -local $local -remote $other -base $base -merged $output
 
 	err = emacsclient.SendEvalFromTemplate(
 		c, args, `(catch 'ec-return
-
-  (let ((buf (find-buffer-visiting {{str .Merged}})))
-    (when (buffer-live-p buf) (kill-buffer buf))
-    (when (buffer-live-p buf) (throw 'ec-return "aborted")))
-
   (require 'ediff)
   (require 'cl)
-  (lexical-let ((ec-resolved nil)
+  (lexical-let ((resolved-merge nil)
+                (keep-merged-buffer nil)
                 (saved-window-config (current-window-configuration))
                 (saved-ediff-quit-merge-hook ediff-quit-merge-hook))
+
+    (let ((buf (find-buffer-visiting {{str .Merged}})))
+      (when (buffer-live-p buf)
+        (setq keep-merged-buffer t)
+        (kill-buffer buf))
+      (when (buffer-live-p buf) (throw 'ec-return "aborted")))
+
     (let ((base {{str .Base}})
           (local {{str .Local}})
           (remote {{str .Remote}})
@@ -100,7 +103,7 @@ emacs.args = -local $local -remote $other -base $base -merged $output
                       "Quit ediff, reporting the merge as having succeeded."
                       (interactive)
                       (ediff-barf-if-not-control-buffer)
-                      (setq ec-resolved
+                      (setq resolved-merge
                             (let ((c 0))
                               (dotimes (n ediff-number-of-differences)
                                 (when (and (not (ediff-merge-region-is-non-clash n))
@@ -120,8 +123,10 @@ emacs.args = -local $local -remote $other -base $base -merged $output
                        (when (buffer-live-p ediff-buffer-C)
                          (with-current-buffer ediff-buffer-C
                            (set-visited-file-name {{str .Merged}})
-                           (save-buffer)))
-                       (signal-process {{.Pid}} (if ec-resolved 'SIGUSR1 'SIGUSR2))))
+                           (save-buffer)
+                           (unless (or keep-merged-buffer (buffer-modified-p))
+                             (kill-buffer)))
+                       (signal-process {{.Pid}} (if resolved-merge 'SIGUSR1 'SIGUSR2)))))
                    (cleanup
                      (lambda()
                        "Cleanup session."
