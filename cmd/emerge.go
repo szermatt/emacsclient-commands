@@ -143,7 +143,6 @@ emacs.args = -local $local -remote $other -base $base -merged $output
                        "Let caller know ediff is done"
                        (when (buffer-live-p ediff-buffer-C)
                          (with-current-buffer ediff-buffer-C
-                           (set-visited-file-name {{str .Merged}})
                            (save-buffer)
                            (unless (or keep-merged-buffer (buffer-modified-p))
                              (kill-buffer)))
