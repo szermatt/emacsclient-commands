@@ -99,7 +99,9 @@ func main() {
            (when-let ((p (get-buffer-process buffer)))
              (when (process-live-p p)
                (error "a process is still active for '%s'" {{str .Name}})))
-           (with-current-buffer buffer (delete-region (point-min) (point-max)))
+           (with-current-buffer buffer
+             (setq buffer-read-only nil)
+             (delete-region (point-min) (point-max)))
            (setq default-directory pwd)
            (let ((process (start-process {{str .Name}} buffer "cat" {{str .Fifo}})))
              (set-process-filter process
