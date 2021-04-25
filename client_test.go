@@ -1,13 +1,14 @@
 package emacsclient
 
 import (
-	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
 	"net"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestQuoteArguments(t *testing.T) {
@@ -18,6 +19,24 @@ func TestQuoteArguments(t *testing.T) {
 func TestUnquoteArguments(t *testing.T) {
 	assert.Equal(t, "hello a&b\n", unquoteArgument("hello&_a&&b&n"))
 	assert.Equal(t, "--print-this", unquoteArgument("&-&-print&-this"))
+}
+
+func TestCheckPath(t *testing.T) {
+
+	t.Run("Check file",
+		func(t *testing.T) {
+			tmp, _ := ioutil.TempFile("", "checkpath_file")
+			assert.True(t, checkPath(tmp.Name()))
+			defer os.Remove(tmp.Name())
+		})
+
+	t.Run("Check directory",
+		func(t *testing.T) {
+			tmp, _ := ioutil.TempDir("", "checkpath_dir")
+			assert.True(t, checkPath(tmp))
+			defer os.Remove(tmp)
+		})
+
 }
 
 func TestSendPWD(t *testing.T) {
@@ -46,6 +65,36 @@ func TestDefaultSocketNameFromEnv(t *testing.T) {
 
 func TestDefaultSocketName(t *testing.T) {
 	assert.Regexp(t, ".*/emacs[0-9]+/server$", defaultSocketName())
+}
+
+func TestDefaultServerFileFromEnv(t *testing.T) {
+	os.Setenv("EMACS_SERVER_FILE", "/myserverfile")
+	assert.Equal(t, "/myserverfile", defaultServerFile())
+	os.LookupEnv("EMACS_SERVER_FILE")
+}
+
+func TestParseServerFile(t *testing.T) {
+
+	// setup
+	serverFile := `127.0.0.1:62989 17061
+;\I^|/+?<egxc[7Qb;6vGCp2:~6nhzcP>:8W#u&*}:@GJj&;ib5KU+).2N}S9Y(e%`
+	tmp, _ := ioutil.TempFile("", "server-file-test")
+	tmp.WriteString(serverFile)
+	defer os.Remove(tmp.Name())
+
+	t.Run("get address",
+		func(t *testing.T) {
+			expect := `127.0.0.1:62989`
+			got, _ := parseServerFile(tmp.Name())
+			assert.Equal(t, expect, got)
+		})
+
+	t.Run("get authKey",
+		func(t *testing.T) {
+			expect := `;\I^|/+?<egxc[7Qb;6vGCp2:~6nhzcP>:8W#u&*}:@GJj&;ib5KU+).2N}S9Y(e%`
+			_, got := parseServerFile(tmp.Name())
+			assert.Equal(t, expect, got)
+		})
 }
 
 func TestSendEval(t *testing.T) {

@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"runtime"
 	"strings"
 )
 
@@ -19,13 +20,25 @@ import "C"
 // Client dialing options.
 type Options struct {
 	SocketName string
+	ServerFile string
 }
 
 // OptionsFromFlags returns client options controlled by standard command-line flags.
 func OptionsFromFlags() *Options {
 	options := &Options{}
 	flag.StringVar(&options.SocketName, "socket-name", defaultSocketName(), "Emacs server unix socket")
+	flag.StringVar(&options.ServerFile, "server-file", defaultServerFile(), "Emacs server TCP file")
 	return options
+}
+
+// checkPath returns `true` if the folder exists
+func checkPath(path string) bool {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
 }
 
 // defaultSocketName returns the default Emacs server socket for the current user.
@@ -37,8 +50,85 @@ func defaultSocketName() string {
 	return path.Join(os.TempDir(), fmt.Sprintf("emacs%d", os.Getuid()), "server")
 }
 
+// defaultEmacsDir returns the default Emacs configuration directory (aka `.emacs.d`) for the current user.
+func defaultEmacsDir() string {
+	var emacsDirName string // default folder name used by emacs
+	var emacsDir string
+
+	if runtime.GOOS == "windows" {
+		emacsDirName = ".emacs.d" // windows always uses '.emacs.d'
+	} else {
+		emacsDirName = "emacs"
+	}
+
+	xdgPathA := path.Join(os.Getenv("XDG_CONFIG_HOME"), emacsDirName)
+	xdgPathB := path.Join(os.Getenv("HOME"), ".config", emacsDirName) // user following convention without XDG_CONFIG_HOME set
+	legacyPath := path.Join(os.Getenv("HOME"), emacsDirName)          // windows (if HOME is set) and emacs pre-v27
+
+	userConfigDir, _ := os.UserConfigDir()
+	osDefaultPath := path.Join(userConfigDir, emacsDirName)
+
+	switch {
+	case checkPath(xdgPathA):
+		emacsDir = xdgPathA
+	case checkPath(xdgPathB):
+		emacsDir = xdgPathB
+	case checkPath(legacyPath):
+		emacsDir = legacyPath
+	case checkPath(osDefaultPath):
+		emacsDir = osDefaultPath
+	}
+
+	return emacsDir
+}
+
+// defaultServerFile returns the default Emacs server file for the current user.
+func defaultServerFile() (serverFile string) {
+	fromEnv := os.Getenv("EMACS_SERVER_FILE")
+	fromEmacsDir := path.Join(defaultEmacsDir(), "server", "server")
+
+	if fromEnv != "" {
+		serverFile = fromEnv
+	} else {
+		serverFile = fromEmacsDir
+	}
+
+	return
+}
+
+// parseServerFile return the emacs server TCP address and auth key from an emacs server file
+func parseServerFile(serverFile string) (serverAddr string, authString string) {
+
+	fp, err := os.Open(serverFile)
+	if err != nil {
+		panic(err)
+	}
+	defer fp.Close()
+
+	scanner := bufio.NewScanner(fp)
+	if scanner.Scan() {
+		// 1st line
+		serverAddr = strings.Split(scanner.Text(), " ")[0]
+	}
+	if scanner.Scan() {
+		// 2nd line
+		authString = scanner.Text()
+	}
+
+	return
+}
+
 // Dial connects to the remote Emacs server.
 func Dial(options *Options) (net.Conn, error) {
+	if checkPath(options.SocketName) {
+		return dialUnix(options)
+	} else {
+		return dialTcp(options)
+	}
+}
+
+// dialUnix connects to an Emacs server instance via Unix Socket.
+func dialUnix(options *Options) (net.Conn, error) {
 	conn, err := net.Dial("unix", options.SocketName)
 	if err != nil {
 		return nil, err
@@ -48,11 +138,33 @@ func Dial(options *Options) (net.Conn, error) {
 		return nil, err
 	}
 	return conn, nil
+
+}
+
+// dialTcp connects to an Emacs server instance via TCP.
+func dialTcp(options *Options) (net.Conn, error) {
+	addr, authKey := parseServerFile(options.ServerFile)
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	if err = tcpAuth(conn, authKey); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	return conn, nil
+
 }
 
 // initConnection initializes the connection with Emacs.
 func initConnection(c net.Conn) error {
 	return sendPWD(c)
+}
+
+// tcpAuth authenticates with the Emacs server.
+func tcpAuth(c net.Conn, authKey string) error {
+	_, err := io.WriteString(c, "-auth "+authKey+"\n")
+	return err
 }
 
 // sendPWD sends the current directory to Emacs.
