@@ -68,9 +68,25 @@ func TestDefaultSocketName(t *testing.T) {
 }
 
 func TestDefaultServerFileFromEnv(t *testing.T) {
-	os.Setenv("EMACS_SERVER_FILE", "/myserverfile")
-	assert.Equal(t, "/myserverfile", defaultServerFile())
-	os.LookupEnv("EMACS_SERVER_FILE")
+
+	// Setup
+	tmp, _ := ioutil.TempFile("", "server-file-test")
+	defer os.Remove(tmp.Name())
+
+	t.Run("from env",
+		func(t *testing.T) {
+			os.Setenv("EMACS_SERVER_FILE", tmp.Name())
+			assert.Equal(t, tmp.Name(), defaultServerFile())
+			os.LookupEnv("EMACS_SERVER_FILE")
+		})
+
+	t.Run("from dir",
+		fromEmacsDir := path.Join(tempDir()
+		}
+		func(t *testing.T) {
+			assert.Equal(t, "/myserverfile", defaultServerFile())
+		})
+
 }
 
 func TestParseServerFile(t *testing.T) {

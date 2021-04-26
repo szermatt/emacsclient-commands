@@ -44,7 +44,7 @@ func checkPath(path string) bool {
 // defaultSocketName returns the default Emacs server socket for the current user.
 func defaultSocketName() string {
 	fromEnv := os.Getenv("EMACS_SOCKET_NAME")
-	if fromEnv != "" {
+	if checkPath(fromEnv) {
 		return fromEnv
 	}
 	return path.Join(os.TempDir(), fmt.Sprintf("emacs%d", os.Getuid()), "server")
@@ -87,9 +87,9 @@ func defaultServerFile() (serverFile string) {
 	fromEnv := os.Getenv("EMACS_SERVER_FILE")
 	fromEmacsDir := path.Join(defaultEmacsDir(), "server", "server")
 
-	if fromEnv != "" {
+	if checkPath(fromEnv) {
 		serverFile = fromEnv
-	} else {
+	} else if checkPath(fromEmacsDir) {
 		serverFile = fromEmacsDir
 	}
 
