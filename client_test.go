@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -58,8 +60,13 @@ func TestSendPWD(t *testing.T) {
 }
 
 func TestDefaultSocketNameFromEnv(t *testing.T) {
-	os.Setenv("EMACS_SOCKET_NAME", "/mysocket")
-	assert.Equal(t, "/mysocket", defaultSocketName())
+
+	// Setup
+	tmp, _ := ioutil.TempFile("", "server-file-test")
+	defer os.Remove(tmp.Name())
+
+	os.Setenv("EMACS_SOCKET_NAME", tmp.Name())
+	assert.Equal(t, tmp.Name(), defaultSocketName())
 	os.Setenv("EMACS_SOCKET_NAME", "")
 }
 
@@ -67,7 +74,7 @@ func TestDefaultSocketName(t *testing.T) {
 	assert.Regexp(t, ".*/emacs[0-9]+/server$", defaultSocketName())
 }
 
-func TestDefaultServerFileFromEnv(t *testing.T) {
+func TestDefaultServerFile(t *testing.T) {
 
 	// Setup
 	tmp, _ := ioutil.TempFile("", "server-file-test")
@@ -81,10 +88,9 @@ func TestDefaultServerFileFromEnv(t *testing.T) {
 		})
 
 	t.Run("from dir",
-		fromEmacsDir := path.Join(tempDir()
-		}
 		func(t *testing.T) {
-			assert.Equal(t, "/myserverfile", defaultServerFile())
+			fromEmacsDir := path.Join(os.TempDir(), filepath.Base(tmp.Name()))
+			assert.Equal(t, fromEmacsDir, defaultServerFile())
 		})
 
 }
