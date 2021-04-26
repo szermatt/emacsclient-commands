@@ -2,16 +2,20 @@ package emacsclient
 
 import (
 	"bufio"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func testWrite(t *testing.T, buffer []byte, readerContent string, expected string) {
-	fifo, err := CreateFifo(&Options{SocketName: ""})
+	fifo, err := CreateFifo(&Options{
+		SocketName: "",
+		ServerFile: "",
+	})
 	if err != nil {
 		assert.FailNowf(t, "Cannot create fifo: %s", err.Error())
 	}

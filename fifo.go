@@ -78,7 +78,14 @@ func (o *Fifo) Close() {
 //
 // Returns "" to use the system's temporary directory.
 func tempDir(options *Options) string {
-	dir := path.Dir(options.SocketName)
+	var dir string
+
+	if checkPath(options.SocketName) {
+		dir = path.Dir(options.SocketName)
+	} else if checkPath(options.ServerFile) {
+		dir = path.Dir(options.ServerFile)
+	}
+
 	if dir == "." {
 		return ""
 	}
