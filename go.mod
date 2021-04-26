@@ -1,4 +1,4 @@
-module github.com/szermatt/emacsclient
+module github.com/szermatt/emacsclient-commands
 
 go 1.13
 
