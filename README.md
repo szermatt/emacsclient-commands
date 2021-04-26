@@ -15,7 +15,7 @@ shell from within an Emacs instance.
 * [erun](#erun) - run a command in an Emacs comint buffer
 * [emerge](#emerge) - merge files using Ediff on Emacs
 
-These tools connect to Emacs through a UNIX socket created by the
+These tools connect to Emacs through a UNIX or TCP socket created by the
 [Emacs server]
 
 [Emacs server]: https://www.gnu.org/software/emacs/manual/html_node/emacs/Emacs-Server.html
