@@ -148,7 +148,7 @@ func dialTcp(options *Options) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = tcpAuth(conn, authKey); err != nil {
+	if err = sendAuth(conn, authKey); err != nil {
 		conn.Close()
 		return nil, err
 	}
@@ -161,9 +161,9 @@ func initConnection(c net.Conn) error {
 	return sendPWD(c)
 }
 
-// tcpAuth authenticates with the Emacs server.
-func tcpAuth(c net.Conn, authKey string) error {
-	_, err := io.WriteString(c, "-auth "+authKey+"\n")
+// sendAuth sends the specified authKey to Emacs.
+func sendAuth(c net.Conn, authKey string) error {
+	_, err := io.WriteString(c, "-auth "+authKey)
 	return err
 }
 
