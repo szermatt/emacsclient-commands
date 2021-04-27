@@ -10,8 +10,21 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+func resetEnv(origEnv []string) error {
+	for _, pair := range origEnv {
+		// Environment variables on Windows can begin with =
+		// https://blogs.msdn.com/b/oldnewthing/archive/2010/05/06/10008132.aspx
+		i := strings.Index(pair[1:], "=") + 1
+		if err := os.Setenv(pair[:i], pair[i+1:]); err != nil {
+			return errors.Errorf("Setenv(%q, %q) failed during reset: %v", pair[:i], pair[i+1:], err)
+		}
+	}
+	return nil
+}
 
 func TestQuoteArguments(t *testing.T) {
 	assert.Equal(t, "hello&_a&&b&n", quoteArgument("hello a&b\n"))
@@ -62,12 +75,12 @@ func TestSendPWD(t *testing.T) {
 func TestDefaultSocketNameFromEnv(t *testing.T) {
 
 	// Setup
+	defer resetEnv(os.Environ())
 	tmp, _ := ioutil.TempFile("", "server-file-test")
 	defer os.Remove(tmp.Name())
 
 	os.Setenv("EMACS_SOCKET_NAME", tmp.Name())
 	assert.Equal(t, tmp.Name(), defaultSocketName())
-	os.Setenv("EMACS_SOCKET_NAME", "")
 }
 
 func TestDefaultSocketName(t *testing.T) {
@@ -82,9 +95,9 @@ func TestDefaultServerFile(t *testing.T) {
 
 	t.Run("from env",
 		func(t *testing.T) {
+			defer resetEnv(os.Environ())
 			os.Setenv("EMACS_SERVER_FILE", tmp.Name())
 			assert.Equal(t, tmp.Name(), defaultServerFile())
-			os.LookupEnv("EMACS_SERVER_FILE")
 		})
 
 	t.Run("from dir",
