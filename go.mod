@@ -9,6 +9,7 @@ require (
 	github.com/hashicorp/nomad v1.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.6.1
+	github.com/tudurom/ttyname v0.0.0-20180413195752-f68e701b3b18
 	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887 // indirect
 	gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61
 )

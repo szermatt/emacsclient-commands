@@ -9,7 +9,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"io"
+	"io/ioutil"
 	"os"
+	"runtime"
 
 	fifo "github.com/hashicorp/nomad/client/lib/fifo"
 )
@@ -30,7 +32,19 @@ type Fifo struct {
 
 // Creates a named pipe.
 func CreateFifo(options *Options) (*Fifo, error) {
-	var path string = `//./path/` + uPipeName("fifo")
+	var path string
+
+	if runtime.GOOS == "windows" {
+		path = `//./path/` + uPipeName("fifo.")
+	} else {
+		tmpfile, err := ioutil.TempFile(os.TempDir(), "fifo.*")
+		if err != nil {
+			return nil, err
+		}
+		path = tmpfile.Name()
+		tmpfile.Close()
+		os.Remove(path)
+	}
 
 	readerOpenFn, err := fifo.CreateAndRead(path)
 	if err != nil {
@@ -70,6 +84,6 @@ func (o *Fifo) ChainWrites(prelude []byte, reader *bufio.Reader) error {
 
 // Close closes the FIFO and deletes the file.
 func (o *Fifo) Close() {
-	o.reader.Close()
 	o.writer.Close()
+	o.reader.Close()
 }
