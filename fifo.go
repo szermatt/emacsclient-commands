@@ -1,3 +1,5 @@
+// +build !windows
+
 // Utilities for building fifo to send and receive
 // whole files.
 package emacsclient
