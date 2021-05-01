@@ -152,6 +152,10 @@ func dialTcp(options *Options) (net.Conn, error) {
 		conn.Close()
 		return nil, err
 	}
+	if err = initConnection(conn); err != nil {
+		conn.Close()
+		return nil, err
+	}
 	return conn, nil
 
 }
@@ -163,7 +167,7 @@ func initConnection(c net.Conn) error {
 
 // sendAuth sends the specified authKey to Emacs.
 func sendAuth(c net.Conn, authKey string) error {
-	_, err := io.WriteString(c, "-auth "+authKey)
+	_, err := io.WriteString(c, "-auth "+authKey+"\n")
 	return err
 }
 
