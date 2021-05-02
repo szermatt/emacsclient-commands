@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -84,6 +85,9 @@ func TestDefaultSocketNameFromEnv(t *testing.T) {
 }
 
 func TestDefaultSocketName(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("windows detected: skipping unix socket test")
+	}
 	assert.Regexp(t, ".*/emacs[0-9]+/server$", defaultSocketName())
 }
 
@@ -102,7 +106,13 @@ func TestDefaultServerFile(t *testing.T) {
 
 	t.Run("from dir",
 		func(t *testing.T) {
-			fromEmacsDir := path.Join(os.TempDir(), filepath.Base(tmp.Name()))
+			var fromEmacsDir string
+			if runtime.GOOS == "windows" {
+				// workuaround for test failure because of path.Join using the wrong slash with os.TempDir (bug?)
+				fromEmacsDir = tmp.Name()
+			} else {
+				fromEmacsDir = path.Join(os.TempDir(), filepath.Base(tmp.Name()))
+			}
 			assert.Equal(t, fromEmacsDir, defaultServerFile())
 		})
 
