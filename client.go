@@ -70,12 +70,6 @@ func defaultEmacsDir() string {
 		emacsDir = osDefaultPath
 	}
 
-	return
-}
-
-func fn0() string {
-	var emacsDirName string
-	var emacsDir string
 	return emacsDir
 }
 
