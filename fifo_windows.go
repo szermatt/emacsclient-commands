@@ -35,7 +35,7 @@ func CreateFifo(options *Options) (*Fifo, error) {
 	var path string
 
 	if runtime.GOOS == "windows" {
-		path = `//./path/` + uPipeName("fifo.")
+		path = `\\.\path\` + uPipeName("fifo_")
 	} else {
 		tmpfile, err := ioutil.TempFile(os.TempDir(), "fifo.*")
 		if err != nil {
