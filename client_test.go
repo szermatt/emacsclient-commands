@@ -111,24 +111,42 @@ func TestDefaultServerFile(t *testing.T) {
 func TestParseServerFile(t *testing.T) {
 
 	// setup
-	serverFile := `127.0.0.1:62989 17061
+	var serverFileContents string = `127.0.0.1:62989 17061
 ;\I^|/+?<egxc[7Qb;6vGCp2:~6nhzcP>:8W#u&*}:@GJj&;ib5KU+).2N}S9Y(e%`
-	tmp, _ := ioutil.TempFile("", "server-file-test")
-	tmp.WriteString(serverFile)
-	defer os.Remove(tmp.Name())
+
+	makeServerFile := func(contents string) string {
+		t.Helper()
+		tmp, _ := ioutil.TempFile("", "server-file-test")
+		tmp.WriteString(contents)
+		return tmp.Name()
+
+	}
+
+	serverFile := makeServerFile(serverFileContents)
+	defer os.Remove(serverFile)
 
 	t.Run("get address",
 		func(t *testing.T) {
 			expect := `127.0.0.1:62989`
-			got, _ := parseServerFile(tmp.Name())
+			got, _, _ := parseServerFile(serverFile)
 			assert.Equal(t, expect, got)
 		})
 
 	t.Run("get authKey",
 		func(t *testing.T) {
 			expect := `;\I^|/+?<egxc[7Qb;6vGCp2:~6nhzcP>:8W#u&*}:@GJj&;ib5KU+).2N}S9Y(e%`
-			_, got := parseServerFile(tmp.Name())
+			_, got, _ := parseServerFile(serverFile)
 			assert.Equal(t, expect, got)
+		})
+
+	t.Run("no server file present",
+		func(t *testing.T) {
+			serverFile := ""
+			defer os.Remove(serverFile)
+			addr, authKey, got := parseServerFile(serverFile)
+			assert.Zero(t, addr)
+			assert.Zero(t, authKey)
+			assert.Error(t, got)
 		})
 }
 

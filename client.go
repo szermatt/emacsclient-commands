@@ -96,11 +96,11 @@ func defaultServerFile() (serverFile string) {
 }
 
 // parseServerFile return the emacs server TCP address and auth key from an emacs server file
-func parseServerFile(serverFile string) (serverAddr string, authString string) {
+func parseServerFile(serverFile string) (serverAddr string, authString string, err error) {
 
 	fp, err := os.Open(serverFile)
 	if err != nil {
-		panic(err)
+		return "", "", err
 	}
 	defer fp.Close()
 
@@ -119,10 +119,14 @@ func parseServerFile(serverFile string) (serverAddr string, authString string) {
 
 // Dial connects to the remote Emacs server.
 func Dial(options *Options) (net.Conn, error) {
-	if checkPath(options.SocketName) {
+	switch {
+	case checkPath(options.SocketName):
 		return dialUnix(options)
-	} else {
+	case checkPath(options.ServerFile):
 		return dialTcp(options)
+	default:
+		err := errors.New("no valid unix socket or server file was found")
+		return nil, err
 	}
 }
 
@@ -142,7 +146,10 @@ func dialUnix(options *Options) (net.Conn, error) {
 
 // dialTcp connects to an Emacs server instance via TCP.
 func dialTcp(options *Options) (net.Conn, error) {
-	addr, authKey := parseServerFile(options.ServerFile)
+	addr, authKey, err := parseServerFile(options.ServerFile)
+	if err != nil {
+		return nil, err
+	}
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
