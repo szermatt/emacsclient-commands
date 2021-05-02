@@ -10,7 +10,6 @@ import (
 	"net"
 	"os"
 	"path"
-	"runtime"
 	"strings"
 
 	"github.com/tudurom/ttyname"
@@ -50,22 +49,13 @@ func defaultSocketName() string {
 }
 
 // defaultEmacsDir returns the default Emacs configuration directory (aka `.emacs.d`) for the current user.
-func defaultEmacsDir() string {
-	var emacsDirName string // default folder name used by emacs
-	var emacsDir string
-
-	if runtime.GOOS == "windows" {
-		emacsDirName = ".emacs.d" // windows always uses '.emacs.d'
-	} else {
-		emacsDirName = "emacs"
-	}
-
-	xdgPathA := path.Join(os.Getenv("XDG_CONFIG_HOME"), emacsDirName)
-	xdgPathB := path.Join(os.Getenv("HOME"), ".config", emacsDirName) // user following convention without XDG_CONFIG_HOME set
-	legacyPath := path.Join(os.Getenv("HOME"), emacsDirName)          // windows (if HOME is set) and emacs pre-v27
+func defaultEmacsDir() (emacsDir string) {
+	xdgPathA := path.Join(os.Getenv("XDG_CONFIG_HOME"), "emacs")
+	xdgPathB := path.Join(os.Getenv("HOME"), ".config", "emacs") // user following convention without XDG_CONFIG_HOME set
+	legacyPath := path.Join(os.Getenv("HOME"), ".emacs.d")       // windows (if HOME is set) and emacs pre-v27
 
 	userConfigDir, _ := os.UserConfigDir()
-	osDefaultPath := path.Join(userConfigDir, emacsDirName)
+	osDefaultPath := path.Join(userConfigDir, ".emacs.d")
 
 	switch {
 	case checkPath(xdgPathA):
@@ -78,6 +68,12 @@ func defaultEmacsDir() string {
 		emacsDir = osDefaultPath
 	}
 
+	return
+}
+
+func fn0() string {
+	var emacsDirName string
+	var emacsDir string
 	return emacsDir
 }
 
