@@ -142,7 +142,6 @@ func TestParseServerFile(t *testing.T) {
 	t.Run("no server file present",
 		func(t *testing.T) {
 			serverFile := ""
-			defer os.Remove(serverFile)
 			addr, authKey, got := parseServerFile(serverFile)
 			assert.Zero(t, addr)
 			assert.Zero(t, authKey)
