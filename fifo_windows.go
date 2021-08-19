@@ -11,7 +11,7 @@ import (
 	"io"
 	"os"
 
-	fifo "github.com/hashicorp/nomad/client/lib/fifo"
+	"github.com/hashicorp/nomad/client/lib/fifo"
 )
 
 func uPipeName(prefix string) string {
