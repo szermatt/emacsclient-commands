@@ -100,11 +100,11 @@ func ReadString(responses chan Response, out io.StringWriter) error {
 				case 'r':
 					out.WriteString("\r")
 				case 'e':
-					out.WriteString(string(27))
+					out.WriteString(string(rune(27)))
 				case 's':
-					out.WriteString(string(32))
+					out.WriteString(string(rune(32)))
 				case 'd':
-					out.WriteString(string(127))
+					out.WriteString(string(rune(127)))
 				default:
 					out.WriteString(string(r))
 				}

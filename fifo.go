@@ -1,3 +1,5 @@
+// +build !windows
+
 // Utilities for building fifo to send and receive
 // whole files.
 package emacsclient
@@ -78,7 +80,14 @@ func (o *Fifo) Close() {
 //
 // Returns "" to use the system's temporary directory.
 func tempDir(options *Options) string {
-	dir := path.Dir(options.SocketName)
+	var dir string
+
+	if checkPath(options.SocketName) {
+		dir = path.Dir(options.SocketName)
+	} else if checkPath(options.ServerFile) {
+		dir = path.Dir(options.ServerFile)
+	}
+
 	if dir == "." {
 		return ""
 	}

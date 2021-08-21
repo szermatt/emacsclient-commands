@@ -15,7 +15,7 @@ shell from within an Emacs instance.
 * [erun](#erun) - run a command in an Emacs comint buffer
 * [emerge](#emerge) - merge files using Ediff on Emacs
 
-These tools connect to Emacs through a UNIX socket created by the
+These tools connect to Emacs through a UNIX or TCP socket created by the
 [Emacs server]
 
 [Emacs server]: https://www.gnu.org/software/emacs/manual/html_node/emacs/Emacs-Server.html
@@ -224,9 +224,7 @@ default matches the default socket name created by `server-start`.
 
 If you use more than one server, you'll need to either pass it to the
 command, using the argument `-socket-name` or set the env variable
-`EMACS_SOCKET_NAME`.
-
-Connections through TCP are not supported at this time.
+`EMACS_SOCKET_NAME`, or `-server-file` and `EMACS_SERVER_FILE` respectively if using a TCP server.
 
 ---
 
