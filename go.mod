@@ -6,10 +6,9 @@ replace github.com/Microsoft/go-winio v0.4.15-0.20200113171025-3fe6c5262873 => g
 
 require (
 	github.com/alessio/shellescape v1.4.1 // indirect
-	github.com/hashicorp/nomad v1.0.4
+	github.com/hashicorp/nomad v1.2.2
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/tudurom/ttyname v0.0.0-20180413195752-f68e701b3b18
-	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887 // indirect
 	gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61
 )
