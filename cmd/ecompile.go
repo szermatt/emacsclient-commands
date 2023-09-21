@@ -46,8 +46,8 @@ func main() {
 			Env:     os.Environ(),
 			Comint:  comint,
 		},
-		`(let ((compilation-environment {{strList .Env}}))
-           (compile {{str .Command}} {{bool .Comint}}))`); err != nil {
+		`(progn (require 'compile) (let ((compilation-environment {{strList .Env}}))
+           (compile {{str .Command}} {{bool .Comint}})))`); err != nil {
 		log.Fatal(err)
 	}
 	responses := make(chan emacsclient.Response, 1)
