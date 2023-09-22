@@ -53,6 +53,10 @@ func TestCheckPath(t *testing.T) {
 			defer os.Remove(tmp)
 		})
 
+	t.Run("Check empty",
+		func(t *testing.T) {
+			assert.False(t, checkPath(""))
+		})
 }
 
 func TestSendPWD(t *testing.T) {

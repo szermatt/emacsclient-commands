@@ -31,6 +31,9 @@ func OptionsFromFlags() *Options {
 
 // checkPath returns `true` if the folder exists
 func checkPath(path string) bool {
+	if "" == path {
+		return false
+	}
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			return false
