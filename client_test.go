@@ -88,11 +88,26 @@ func TestDefaultSocketNameFromEnv(t *testing.T) {
 	assert.Equal(t, tmp.Name(), defaultSocketName())
 }
 
+func TestSocketNameInRunDir(t *testing.T) {
+
+	// Setup
+	defer resetEnv(os.Environ())
+	dir, _ := ioutil.TempDir("", "socket-name-test-dir")
+	defer os.RemoveAll(dir)
+
+	os.Setenv("EMACS_SOCKET_NAME", "")
+	os.Setenv("XDG_RUNTIME_DIR", dir)
+	os.Mkdir(path.Join(dir, "emacs"), 0700)
+	socketPath := path.Join(dir, "emacs", "server")
+	os.Create(socketPath)
+	assert.Equal(t, socketPath, defaultSocketName())
+}
+
 func TestDefaultSocketName(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("windows detected: skipping unix socket test")
 	}
-	assert.Regexp(t, ".*/emacs[0-9]+/server$", defaultSocketName())
+	assert.Regexp(t, ".*/server$", defaultSocketName())
 }
 
 func TestDefaultServerFile(t *testing.T) {

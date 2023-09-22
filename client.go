@@ -48,7 +48,28 @@ func defaultSocketName() string {
 	if checkPath(fromEnv) {
 		return fromEnv
 	}
-	return path.Join(os.TempDir(), fmt.Sprintf("emacs%d", os.Getuid()), "server")
+
+	runDir := os.Getenv("XDG_RUNTIME_DIR")
+	if runDir != "" {
+		inRunDir := path.Join(runDir, "emacs", "server")
+		if checkPath(inRunDir) {
+			return inRunDir
+		}
+	} else {
+		uid := fmt.Sprintf("%d", os.Getuid())
+		inRunDir := path.Join("run", "user", uid, "emacs", "server")
+		if checkPath(inRunDir) {
+			return inRunDir
+		}
+		inVarRunDir := path.Join(
+			"var", "run", "user", uid, "emacs", "server")
+		if checkPath(inVarRunDir) {
+			return inVarRunDir
+		}
+	}
+	// old-style socket path
+	return path.Join(
+		os.TempDir(), fmt.Sprintf("emacs%d", os.Getuid()), "server")
 }
 
 // defaultEmacsDir returns the default Emacs configuration directory (aka `.emacs.d`) for the current user.
