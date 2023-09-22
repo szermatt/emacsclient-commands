@@ -90,7 +90,7 @@ func defaultEmacsDir() string {
 		emacsDir = xdgPathB
 	case checkPath(legacyPath):
 		emacsDir = legacyPath
-	case checkPath(osDefaultPath):
+	default:
 		emacsDir = osDefaultPath
 	}
 
@@ -101,14 +101,17 @@ func defaultEmacsDir() string {
 func defaultServerFile() (serverFile string) {
 	fromEnv := os.Getenv("EMACS_SERVER_FILE")
 	fromEmacsDir := path.Join(defaultEmacsDir(), "server", "server")
-
 	if checkPath(fromEnv) {
-		serverFile = fromEnv
-	} else if checkPath(fromEmacsDir) {
-		serverFile = fromEmacsDir
+		return fromEnv
 	}
-
-	return
+	if checkPath(fromEmacsDir) {
+		return fromEmacsDir
+	}
+	// No file exists, return a reasonable value.
+	if fromEnv != "" {
+		return fromEnv
+	}
+	return fromEmacsDir
 }
 
 // parseServerFile return the emacs server TCP address and auth key from an emacs server file

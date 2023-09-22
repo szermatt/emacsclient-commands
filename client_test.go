@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"path"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -112,29 +111,31 @@ func TestDefaultSocketName(t *testing.T) {
 
 func TestDefaultServerFile(t *testing.T) {
 
-	// Setup
-	tmp, _ := ioutil.TempFile("", "server-file-test")
-	defer os.Remove(tmp.Name())
-
 	t.Run("from env",
 		func(t *testing.T) {
+			// Setup
+			tmp, _ := ioutil.TempFile("", "server-file-test")
+			defer os.Remove(tmp.Name())
+
 			defer resetEnv(os.Environ())
 			os.Setenv("EMACS_SERVER_FILE", tmp.Name())
 			assert.Equal(t, tmp.Name(), defaultServerFile())
 		})
 
-	t.Run("from dir",
+	t.Run("in config dir",
 		func(t *testing.T) {
-			var fromEmacsDir string
-			if runtime.GOOS == "windows" {
-				// workuaround for test failure because of path.Join using the wrong slash with os.TempDir (bug?)
-				fromEmacsDir = tmp.Name()
-			} else {
-				fromEmacsDir = path.Join(os.TempDir(), filepath.Base(tmp.Name()))
-			}
-			assert.Equal(t, fromEmacsDir, defaultServerFile())
-		})
+			// Setup
+			defer resetEnv(os.Environ())
+			dir, _ := ioutil.TempDir("", "server-file-test-dir")
+			defer os.RemoveAll(dir)
 
+			os.Setenv("EMACS_SERVER_FILE", "")
+			os.Setenv("XDG_CONFIG_HOME", dir)
+			os.Mkdir(path.Join(dir, "emacs"), 0700)
+			os.Mkdir(path.Join(dir, "emacs", "server"), 0700)
+
+			assert.Equal(t, path.Join(dir, "emacs", "server", "server"), defaultServerFile())
+		})
 }
 
 func TestParseServerFile(t *testing.T) {
